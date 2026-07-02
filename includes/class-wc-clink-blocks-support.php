@@ -51,7 +51,7 @@ final class WC_CLINK_Blocks_Support extends AbstractPaymentMethodType {
 
 		wp_register_script(
 			'wc-clink-blocks',
-			WC_CLINK_PLUGIN_URL . "assets/js/clink-checkout{$suffix}.js",
+			WC_CLINK_PLUGIN_URL . "assets/js/clink-blocks{$suffix}.js",
 			array(
 				'wc-blocks-registry',
 				'wc-settings',

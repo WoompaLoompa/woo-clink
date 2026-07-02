@@ -98,7 +98,10 @@ npm run build
 npm run watch
 ```
 
-The JavaScript source at `assets/js/clink-checkout.js` uses `@shocknet/clink-sdk` to handle CLINK protocol communication. It is bundled with esbuild into `assets/js/clink-checkout.min.js`.
+Two JavaScript bundles are built with esbuild:
+
+- **`assets/js/clink-checkout.js`** — uses `@shocknet/clink-sdk` to request Lightning invoices via the CLINK protocol on the order-received page. Built to `clink-checkout.min.js`.
+- **`assets/js/clink-blocks.js`** — registers the gateway with WooCommerce Cart/Checkout Blocks via `registerPaymentMethod()`. Built to `clink-blocks.min.js`.
 
 ## Architecture
 
@@ -138,8 +141,10 @@ woocommerce-clink-gateway/
 │   └── class-wc-clink-blocks-support.php# Cart/Checkout Blocks support
 ├── assets/
 │   ├── js/
-│   │   ├── clink-checkout.js            # Source (ES module, uses @shocknet/clink-sdk)
+│   │   ├── clink-checkout.js            # Source — order-received page (ES module, @shocknet/clink-sdk)
 │   │   ├── clink-checkout.min.js        # Built bundle
+│   │   ├── clink-blocks.js             # Source — blocks checkout registration
+│   │   ├── clink-blocks.min.js         # Built bundle
 │   │   └── clink-checkout.asset.php     # Asset metadata
 │   ├── css/clink-checkout.css           # Checkout page styles
 │   └── images/lightning-icon.svg        # Payment method icon

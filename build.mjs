@@ -1,26 +1,37 @@
 import * as esbuild from 'esbuild';
-import { writeFileSync } from 'fs';
 
-const isWatch = process.argv.includes('--watch');
+const isWatch = process.argv.includes( '--watch' );
 
-const config = {
-  entryPoints: ['assets/js/clink-checkout.js'],
-  bundle: true,
-  minify: true,
-  outfile: 'assets/js/clink-checkout.min.js',
-  target: ['es2020'],
-  format: 'iife',
-  globalName: 'ClinkCheckout',
-  loader: {
-    '.wasm': 'empty',
+const builds = [
+  {
+    entryPoints: [ 'assets/js/clink-checkout.js' ],
+    bundle: true,
+    minify: true,
+    outfile: 'assets/js/clink-checkout.min.js',
+    target: [ 'es2020' ],
+    format: 'iife',
+    globalName: 'ClinkCheckout',
+    loader: { '.wasm': 'empty' },
   },
-};
+  {
+    entryPoints: [ 'assets/js/clink-blocks.js' ],
+    bundle: false,
+    minify: true,
+    outfile: 'assets/js/clink-blocks.min.js',
+    target: [ 'es2020' ],
+    format: 'iife',
+  },
+];
 
-if (isWatch) {
-  const ctx = await esbuild.context(config);
-  await ctx.watch();
-  console.log('Watching for changes...');
+if ( isWatch ) {
+  for ( const cfg of builds ) {
+    const ctx = await esbuild.context( cfg );
+    await ctx.watch();
+  }
+  console.log( 'Watching for changes...' );
 } else {
-  await esbuild.build(config);
-  console.log('Build complete: assets/js/clink-checkout.min.js');
+  for ( const cfg of builds ) {
+    await esbuild.build( cfg );
+    console.log( 'Build complete:', cfg.outfile );
+  }
 }
