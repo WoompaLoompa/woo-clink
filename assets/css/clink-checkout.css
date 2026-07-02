@@ -1,0 +1,184 @@
+#wc-clink-payment-root {
+  margin: 24px 0;
+}
+
+.wc-clink-container {
+  text-align: center;
+  padding: 32px 24px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.wc-clink-header {
+  margin-bottom: 20px;
+}
+
+.wc-clink-bolt-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.wc-clink-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.wc-clink-loader {
+  padding: 20px 0;
+}
+
+.wc-clink-loader img {
+  width: 32px;
+  height: 32px;
+}
+
+.wc-clink-qr {
+  margin: 20px auto;
+  display: flex;
+  justify-content: center;
+}
+
+.wc-clink-qr-img {
+  width: 280px;
+  height: 280px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  image-rendering: pixelated;
+}
+
+.wc-clink-amount {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 12px 0;
+}
+
+.wc-clink-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.wc-clink-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+  border: none;
+  line-height: 1.4;
+}
+
+.wc-clink-btn-primary {
+  background: #f7931a;
+  color: #fff;
+}
+
+.wc-clink-btn-primary:hover {
+  background: #e07e0e;
+  color: #fff;
+}
+
+.wc-clink-btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.wc-clink-btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.wc-clink-status {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.wc-clink-status-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.wc-clink-inline-loader {
+  width: 16px;
+  height: 16px;
+}
+
+.wc-clink-check-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: #22c55e;
+}
+
+.wc-clink-error-container {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.wc-clink-error-container .wc-clink-btn {
+  margin-top: 12px;
+}
+
+.wc-clink-error-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: #ef4444;
+}
+
+.wc-clink-error-msg {
+  color: #991b1b;
+  font-size: 14px;
+  margin: 0;
+}
+
+.wc-clink-paid {
+  text-align: center;
+  padding: 24px;
+  color: #166534;
+  font-weight: 500;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.wc-clink-error-box {
+  text-align: center;
+  padding: 24px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+@media (max-width: 480px) {
+  .wc-clink-qr-img {
+    width: 220px;
+    height: 220px;
+  }
+
+  .wc-clink-container {
+    padding: 24px 16px;
+  }
+}
