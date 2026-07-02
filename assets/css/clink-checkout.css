@@ -33,6 +33,11 @@
   padding: 20px 0;
 }
 
+
+.payment_method_clink img {
+  width: 40px;
+}
+
 .wc-clink-loader img {
   width: 32px;
   height: 32px;
