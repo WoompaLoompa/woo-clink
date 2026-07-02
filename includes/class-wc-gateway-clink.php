@@ -2,7 +2,7 @@
 /**
  * WooCommerce CLINK Payment Gateway
  *
- * @package WooCommerce_CLINK_Gateway
+ * @package CLINK_Gateway_for_WooCommerce
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -39,10 +39,10 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		self::$instance = $this;
 
 		$this->id                 = 'clink';
-		$this->icon               = apply_filters( 'woocommerce_clink_icon', WC_CLINK_PLUGIN_URL . 'assets/images/lightning-icon.svg' );
+		$this->icon               = apply_filters( 'wc_clink_icon', WC_CLINK_PLUGIN_URL . 'assets/images/lightning-icon.svg' );
 		$this->has_fields         = false;
-		$this->method_title       = __( 'CLINK (Lightning)', 'woocommerce-clink-gateway' );
-		$this->method_description = __( 'Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with <a href="https://ShockWallet.app">ShockWallet.app</a>, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.' );
+		$this->method_title       = __( 'Bitcoin Lightning (via CLINK)', 'clink-gateway-for-woocommerce' );
+		$this->method_description = __( 'Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with <a href="https://ShockWallet.app">ShockWallet.app</a>, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.', 'clink-gateway-for-woocommerce' );
 		$this->supports           = array(
 			'products',
 			'refunds',
@@ -51,8 +51,8 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$this->init_form_fields();
 		$this->init_settings();
 
-		$this->title       = $this->get_option( 'title', __( 'Lightning (CLINK)', 'woocommerce-clink-gateway' ) );
-		$this->description = $this->get_option( 'description', __( 'Pay with your Lightning wallet via the CLINK protocol.', 'woocommerce-clink-gateway' ) );
+		$this->title       = $this->get_option( 'title', __( 'Bitcoin Lightning (via CLINK)', 'clink-gateway-for-woocommerce' ) );
+		$this->description = $this->get_option( 'description', __( 'Pay with your Lightning wallet via the CLINK protocol.', 'clink-gateway-for-woocommerce' ) );
 		$this->enabled     = $this->get_option( 'enabled', 'no' );
 
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -87,50 +87,50 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'         => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-clink-gateway' ),
+				'title'   => __( 'Enable/Disable', 'clink-gateway-for-woocommerce' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable CLINK Lightning Payments', 'woocommerce-clink-gateway' ),
+				'label'   => __( 'Enable Bitcoin Lightning payments via CLINK', 'clink-gateway-for-woocommerce' ),
 				'default' => 'no',
 			),
 			'title'           => array(
-				'title'       => __( 'Title', 'woocommerce-clink-gateway' ),
+				'title'       => __( 'Title', 'clink-gateway-for-woocommerce' ),
 				'type'        => 'text',
-				'description' => __( 'Payment method title shown at checkout.', 'woocommerce-clink-gateway' ),
-				'default'     => __( 'Lightning (CLINK)', 'woocommerce-clink-gateway' ),
+				'description' => __( 'Payment method title shown at checkout.', 'clink-gateway-for-woocommerce' ),
+				'default'     => __( 'Bitcoin Lightning (via CLINK)', 'clink-gateway-for-woocommerce' ),
 				'desc_tip'    => true,
 			),
 			'description'     => array(
-				'title'       => __( 'Description', 'woocommerce-clink-gateway' ),
+				'title'       => __( 'Description', 'clink-gateway-for-woocommerce' ),
 				'type'        => 'textarea',
-				'description' => __( 'Payment method description shown at checkout.', 'woocommerce-clink-gateway' ),
-				'default'     => __( 'Pay with your Lightning wallet via the CLINK protocol. Download <a href="https://shockwallet.app">SHOCKWALLET.app</a> or any other CLINK compatible bitcoin wallet (ZEUS, Amethyst, etc.).', 'woocommerce-clink-gateway' ),
+				'description' => __( 'Payment method description shown at checkout.', 'clink-gateway-for-woocommerce' ),
+				'default'     => __( 'Pay with your Lightning wallet via the CLINK protocol. Download <a href="https://shockwallet.app">SHOCKWALLET.app</a> or any other CLINK compatible bitcoin wallet (ZEUS, Amethyst, etc.).', 'clink-gateway-for-woocommerce' ),
 			),
 			'noffer'          => array(
-				'title'       => __( 'CLINK Offer String (noffer)', 'woocommerce-clink-gateway' ),
+				'title'       => __( 'CLINK Offer String (noffer)', 'clink-gateway-for-woocommerce' ),
 				'type'        => 'text',
-				'description' => __( 'Your CLINK offer string (starts with noffer1...). Generate this from ShockWallet, Lightning.Pub, or any CLINK-compatible wallet.', 'woocommerce-clink-gateway' ),
+				'description' => __( 'Your CLINK offer string (starts with noffer1...). Generate this from ShockWallet, Lightning.Pub, or any CLINK-compatible wallet.', 'clink-gateway-for-woocommerce' ),
 				'default'     => '',
 				'placeholder' => 'noffer1...',
 				'desc_tip'    => false,
 			),
 			'fixed_fiat_rate'  => array(
-				'title'       => __( 'Fixed BTC Rate (optional)', 'woocommerce-clink-gateway' ),
+				'title'       => __( 'Fixed BTC Rate (optional)', 'clink-gateway-for-woocommerce' ),
 				'type'        => 'text',
-				'description' => __( 'Optionally set a fixed BTC price in your WooCommerce store currency (e.g., 75000.00). Leave empty to use live CoinGecko rate.', 'woocommerce-clink-gateway' ),
+				'description' => __( 'Optionally set a fixed BTC price in your WooCommerce store currency (e.g., 75000.00). Leave empty to use live CoinGecko rate.', 'clink-gateway-for-woocommerce' ),
 				'default'     => '',
-				'placeholder' => __( 'Live rate', 'woocommerce-clink-gateway' ),
+				'placeholder' => __( 'Live rate', 'clink-gateway-for-woocommerce' ),
 			),
 			'invoice_timeout'  => array(
-				'title'             => __( 'Invoice Timeout (seconds)', 'woocommerce-clink-gateway' ),
+				'title'             => __( 'Invoice Timeout (seconds)', 'clink-gateway-for-woocommerce' ),
 				'type'              => 'number',
-				'description'       => __( 'How long the customer has to pay the invoice before it expires.', 'woocommerce-clink-gateway' ),
+				'description'       => __( 'How long the customer has to pay the invoice before it expires.', 'clink-gateway-for-woocommerce' ),
 				'default'           => 600,
 				'custom_attributes' => array( 'min' => 60, 'max' => 3600 ),
 			),
 			'poll_interval'    => array(
-				'title'             => __( 'Poll Interval (ms)', 'woocommerce-clink-gateway' ),
+				'title'             => __( 'Poll Interval (ms)', 'clink-gateway-for-woocommerce' ),
 				'type'              => 'number',
-				'description'       => __( 'How often to check if the payment has been confirmed (in milliseconds).', 'woocommerce-clink-gateway' ),
+				'description'       => __( 'How often to check if the payment has been confirmed (in milliseconds).', 'clink-gateway-for-woocommerce' ),
 				'default'           => 5000,
 				'custom_attributes' => array( 'min' => 2000, 'max' => 30000 ),
 			),
@@ -151,7 +151,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 			$this->add_settings_error(
 				'noffer',
 				'invalid-noffer',
-				__( 'The CLINK offer string appears invalid. It should start with "noffer1".', 'woocommerce-clink-gateway' ),
+				__( 'The CLINK offer string appears invalid. It should start with "noffer1".', 'clink-gateway-for-woocommerce' ),
 				'error'
 			);
 		}
@@ -212,14 +212,14 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 
 		if ( ! $order ) {
-			wc_add_notice( __( 'Order not found.', 'woocommerce-clink-gateway' ), 'error' );
+			wc_add_notice( __( 'Order not found.', 'clink-gateway-for-woocommerce' ), 'error' );
 			return array( 'result' => 'failure' );
 		}
 
 		$noffer = $this->get_option( 'noffer' );
 
 		if ( empty( $noffer ) ) {
-			wc_add_notice( __( 'Payment gateway not configured. Please contact the store owner.', 'woocommerce-clink-gateway' ), 'error' );
+			wc_add_notice( __( 'Payment gateway not configured. Please contact the store owner.', 'clink-gateway-for-woocommerce' ), 'error' );
 			return array( 'result' => 'failure' );
 		}
 
@@ -228,7 +228,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$amount_sats = $this->convert_to_sats( $total, $currency );
 
 		if ( $amount_sats <= 0 ) {
-			wc_add_notice( __( 'Could not calculate Lightning amount. Please try again.', 'woocommerce-clink-gateway' ), 'error' );
+			wc_add_notice( __( 'Could not calculate Lightning amount. Please try again.', 'clink-gateway-for-woocommerce' ), 'error' );
 			return array( 'result' => 'failure' );
 		}
 
@@ -239,7 +239,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$order->update_meta_data( '_clink_created', time() );
 		$order->save();
 
-		$order->update_status( 'pending', __( 'Awaiting CLINK payment.', 'woocommerce-clink-gateway' ) );
+		$order->update_status( 'pending', __( 'Awaiting CLINK payment.', 'clink-gateway-for-woocommerce' ) );
 
 		WC()->cart->empty_cart();
 
@@ -264,11 +264,11 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 			return;
 		}
 
-		$receipt = ! empty( $txn_id ) ? $txn_id : __( 'CLINK protocol receipt', 'woocommerce-clink-gateway' );
+		$receipt = ! empty( $txn_id ) ? $txn_id : __( 'CLINK protocol receipt', 'clink-gateway-for-woocommerce' );
 		$order->add_order_note(
 			sprintf(
 			/* translators: %s: receipt identifier */
-				__( 'CLINK payment completed. Receipt: %s', 'woocommerce-clink-gateway' ),
+				__( 'CLINK payment completed. Receipt: %s', 'clink-gateway-for-woocommerce' ),
 				$receipt
 			)
 		);
@@ -296,7 +296,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$order->add_order_note(
 			sprintf(
 			/* translators: 1: formatted amount, 2: reason */
-				__( 'Refund requested: %1$s (Reason: %2$s). Manual Lightning refund required - CLINK does not support automatic refunds.', 'woocommerce-clink-gateway' ),
+				__( 'Refund requested: %1$s (Reason: %2$s). Manual Lightning refund required - CLINK does not support automatic refunds.', 'clink-gateway-for-woocommerce' ),
 				wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
 				$reason
 			)
@@ -393,7 +393,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 	private function log_error( string $message ) {
 		if ( function_exists( 'wc_get_logger' ) ) {
 			$logger = wc_get_logger();
-			$logger->error( $message, array( 'source' => 'woocommerce-clink-gateway' ) );
+			$logger->error( $message, array( 'source' => 'clink-gateway-for-woocommerce' ) );
 		}
 	}
 }

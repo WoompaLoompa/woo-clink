@@ -1,29 +1,39 @@
 <?php
 /**
- * Plugin Name: WooCommerce CLINK Gateway
+ * Plugin Name: CLINK Gateway for WooCommerce
  * Plugin URI: https://github.com/WoompaLoompa/woo-clink
  * Description: Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet.app, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * Author: WoompaLoompa
  * Author URI: https://woo-clink.wasmer.app
- * License: MIT
- * Text Domain: woocommerce-clink-gateway
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: clink-gateway-for-woocommerce
  * Domain Path: /languages
  *
- * @package WooCommerce_CLINK_Gateway
+ * @package CLINK_Gateway_for_WooCommerce
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WC_CLINK_VERSION', '1.0.0' );
+define( 'WC_CLINK_VERSION', '1.0.4' );
 define( 'WC_CLINK_PLUGIN_FILE', __FILE__ );
 define( 'WC_CLINK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WC_CLINK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 add_action( 'plugins_loaded', 'wc_clink_init', 0 );
+
+add_filter(
+	'plugin_action_links_' . plugin_basename( __FILE__ ),
+	function ( $links ) {
+		$settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=clink&from=WCADMIN_PAYMENT_SETTINGS' ) ) . '">' . esc_html__( 'Settings', 'clink-gateway-for-woocommerce' ) . '</a>';
+		array_unshift( $links, $settings_link );
+		return $links;
+	}
+);
 
 /**
  * Initialize the plugin after WooCommerce is available.
@@ -33,7 +43,7 @@ function wc_clink_init() {
 		add_action(
 			'admin_notices',
 			function () {
-				echo '<div class="error"><p>' . wp_kses_post( __( '<strong>WooCommerce CLINK Gateway</strong> requires WooCommerce to be installed and activated.', 'woocommerce-clink-gateway' ) ) . '</p></div>';
+				echo '<div class="error"><p>' . wp_kses_post( __( '<strong>WooCommerce CLINK Gateway</strong> requires WooCommerce to be installed and activated.', 'clink-gateway-for-woocommerce' ) ) . '</p></div>';
 			}
 		);
 		return;
@@ -140,7 +150,7 @@ function wc_clink_checkout_scripts() {
 			$noffer           = $order->get_meta( '_clink_noffer' );
 			$description      = sprintf(
 			/* translators: 1: order number, 2: site name */
-				__( 'Order %1$s - %2$s', 'woocommerce-clink-gateway' ),
+				__( 'Order %1$s - %2$s', 'clink-gateway-for-woocommerce' ),
 				$order->get_order_number(),
 				wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES )
 			);
@@ -161,15 +171,15 @@ function wc_clink_checkout_scripts() {
 			'timeout'     => $gateway->get_option( 'invoice_timeout', 600 ),
 			'loader'      => esc_url( admin_url( 'images/spinner.gif' ) ),
 			'i18n'        => array(
-				'generatingInvoice' => __( 'Generating Lightning Invoice...', 'woocommerce-clink-gateway' ),
-				'scanToPay'        => __( 'Scan with your Lightning Wallet to pay', 'woocommerce-clink-gateway' ),
-				'copyInvoice'      => __( 'Copy Invoice', 'woocommerce-clink-gateway' ),
-				'invoiceCopied'    => __( 'Copied!', 'woocommerce-clink-gateway' ),
-				'waitingPayment'   => __( 'Waiting for payment confirmation...', 'woocommerce-clink-gateway' ),
-				'paymentConfirmed'  => __( 'Payment confirmed! Redirecting...', 'woocommerce-clink-gateway' ),
-				'paymentError'     => __( 'Error generating invoice. Please try again.', 'woocommerce-clink-gateway' ),
-				'expired'          => __( 'Invoice expired. Please try again.', 'woocommerce-clink-gateway' ),
-				'openInWallet'     => __( 'Open in Wallet', 'woocommerce-clink-gateway' ),
+				'generatingInvoice' => __( 'Generating Lightning Invoice...', 'clink-gateway-for-woocommerce' ),
+				'scanToPay'        => __( 'Scan with your Lightning Wallet to pay', 'clink-gateway-for-woocommerce' ),
+				'copyInvoice'      => __( 'Copy Invoice', 'clink-gateway-for-woocommerce' ),
+				'invoiceCopied'    => __( 'Copied!', 'clink-gateway-for-woocommerce' ),
+				'waitingPayment'   => __( 'Waiting for payment confirmation...', 'clink-gateway-for-woocommerce' ),
+				'paymentConfirmed'  => __( 'Payment confirmed! Redirecting...', 'clink-gateway-for-woocommerce' ),
+				'paymentError'     => __( 'Error generating invoice. Please try again.', 'clink-gateway-for-woocommerce' ),
+				'expired'          => __( 'Invoice expired. Please try again.', 'clink-gateway-for-woocommerce' ),
+				'openInWallet'     => __( 'Open in Wallet', 'clink-gateway-for-woocommerce' ),
 			),
 		)
 	);
@@ -211,7 +221,7 @@ function wc_clink_ajax_confirm_payment() {
 	check_ajax_referer( 'wc_clink_nonce', 'nonce' );
 
 	$order_id = absint( $_POST['order_id'] ?? 0 );
-	$invoice  = sanitize_text_field( $_POST['invoice'] ?? '' );
+	$invoice  = sanitize_text_field( wp_unslash( $_POST['invoice'] ?? '' ) );
 
 	if ( ! $order_id || ! $invoice ) {
 		wp_send_json_error( array( 'message' => 'Missing parameters' ) );
@@ -227,7 +237,7 @@ function wc_clink_ajax_confirm_payment() {
 	$order->add_order_note(
 		sprintf(
 		/* translators: %s: truncated invoice string */
-			__( 'CLINK invoice generated: %s...', 'woocommerce-clink-gateway' ),
+			__( 'CLINK invoice generated: %s...', 'clink-gateway-for-woocommerce' ),
 			substr( $invoice, 0, 30 )
 		)
 	);
@@ -235,7 +245,7 @@ function wc_clink_ajax_confirm_payment() {
 	$gateway = WC_Gateway_CLINK::get_instance();
 
 	if ( $gateway ) {
-		$order->update_status( 'on-hold', __( 'Invoice generated, awaiting payment.', 'woocommerce-clink-gateway' ) );
+		$order->update_status( 'on-hold', __( 'Invoice generated, awaiting payment.', 'clink-gateway-for-woocommerce' ) );
 	}
 
 	wp_send_json_success();
@@ -283,7 +293,7 @@ function wc_clink_thankyou_page( $order_id ) {
 	$paid = in_array( $order->get_status(), array( 'processing', 'completed' ), true );
 
 	if ( $paid ) {
-		echo '<div class="wc-clink-paid">' . esc_html__( 'Payment confirmed. Thank you for your order!', 'woocommerce-clink-gateway' ) . '</div>';
+		echo '<div class="wc-clink-paid">' . esc_html__( 'Payment confirmed. Thank you for your order!', 'clink-gateway-for-woocommerce' ) . '</div>';
 		return;
 	}
 
@@ -291,7 +301,7 @@ function wc_clink_thankyou_page( $order_id ) {
 	$amount_sats = (int) $order->get_meta( '_clink_amount_sats' );
 
 	if ( ! $noffer || ! $amount_sats ) {
-		echo '<div class="wc-clink-error">' . esc_html__( 'Missing payment configuration. Please contact the store owner.', 'woocommerce-clink-gateway' ) . '</div>';
+		echo '<div class="wc-clink-error">' . esc_html__( 'Missing payment configuration. Please contact the store owner.', 'clink-gateway-for-woocommerce' ) . '</div>';
 		return;
 	}
 

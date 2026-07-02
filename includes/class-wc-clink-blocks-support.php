@@ -2,7 +2,7 @@
 /**
  * WooCommerce CLINK Gateway - Cart/Checkout Blocks Support
  *
- * @package WooCommerce_CLINK_Gateway
+ * @package CLINK_Gateway_for_WooCommerce
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -76,7 +76,7 @@ final class WC_CLINK_Blocks_Support extends AbstractPaymentMethodType {
 
 		return array(
 			'id'          => $this->name,
-			'title'       => $gateway ? esc_html( $gateway->get_title() ) : esc_html__( 'Lightning (CLINK)', 'woocommerce-clink-gateway' ),
+			'title'       => $gateway ? esc_html( $gateway->get_title() ) : esc_html__( 'Bitcoin Lightning (via CLINK)', 'clink-gateway-for-woocommerce' ),
 			'description' => $gateway ? WC_Gateway_CLINK::external_linkify( wp_kses_post( $gateway->get_description() ) ) : '',
 			'supports'    => $gateway ? $gateway->supports : array( 'products' ),
 			'icon'        => $gateway ? esc_url( $gateway->icon ) : '',

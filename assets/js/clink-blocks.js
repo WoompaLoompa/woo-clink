@@ -4,7 +4,7 @@ const el = window.wp.element.createElement;
 
 const PAYMENT_METHOD_NAME = 'clink';
 const settings = getSetting( `${PAYMENT_METHOD_NAME}_data`, {} );
-const label     = settings.title || 'Lightning (CLINK)';
+const label     = settings.title || 'Bitcoin Lightning (via CLINK)';
 
 const Label = () =>
   el(

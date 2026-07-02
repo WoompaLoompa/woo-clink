@@ -2,7 +2,7 @@
 /**
  * WooCommerce CLINK Gateway - Subscriptions Integration
  *
- * @package WooCommerce_CLINK_Gateway
+ * @package CLINK_Gateway_for_WooCommerce
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -35,7 +35,7 @@ class WC_CLINK_Subscriptions {
 			'post_meta' => array(
 				'_clink_noffer' => array(
 					'value' => $subscription->get_meta( '_clink_noffer' ),
-					'label' => __( 'CLINK Offer String', 'woocommerce-clink-gateway' ),
+					'label' => __( 'CLINK Offer String', 'clink-gateway-for-woocommerce' ),
 				),
 			),
 		);
@@ -52,7 +52,7 @@ class WC_CLINK_Subscriptions {
 	 */
 	public static function validate_subscription_payment_meta( $payment_meta, $subscription ) {
 		if ( ! isset( $payment_meta['clink']['post_meta']['_clink_noffer']['value'] ) ) {
-			throw new Exception( __( 'CLINK Offer String is required for subscription payments.', 'woocommerce-clink-gateway' ) );
+			throw new Exception( esc_html__( 'CLINK Offer String is required for subscription payments.', 'clink-gateway-for-woocommerce' ) );
 		}
 	}
 
@@ -67,14 +67,14 @@ class WC_CLINK_Subscriptions {
 		$subscription  = reset( $subscriptions );
 
 		if ( ! $subscription ) {
-			$renewal_order->update_status( 'failed', __( 'Subscription not found for renewal.', 'woocommerce-clink-gateway' ) );
+			$renewal_order->update_status( 'failed', __( 'Subscription not found for renewal.', 'clink-gateway-for-woocommerce' ) );
 			return;
 		}
 
 		$noffer = $subscription->get_meta( '_clink_noffer' );
 
 		if ( empty( $noffer ) ) {
-			$renewal_order->update_status( 'failed', __( 'CLINK offer not configured for subscription.', 'woocommerce-clink-gateway' ) );
+			$renewal_order->update_status( 'failed', __( 'CLINK offer not configured for subscription.', 'clink-gateway-for-woocommerce' ) );
 			return;
 		}
 
@@ -82,14 +82,14 @@ class WC_CLINK_Subscriptions {
 		$gateway  = WC_Gateway_CLINK::get_instance();
 
 		if ( ! $gateway ) {
-			$renewal_order->update_status( 'failed', __( 'Payment gateway not available.', 'woocommerce-clink-gateway' ) );
+			$renewal_order->update_status( 'failed', __( 'Payment gateway not available.', 'clink-gateway-for-woocommerce' ) );
 			return;
 		}
 
 		$amount_sats = $gateway->convert_to_sats( $amount_to_charge, $currency );
 
 		if ( $amount_sats <= 0 ) {
-			$renewal_order->update_status( 'failed', __( 'Could not calculate sats amount.', 'woocommerce-clink-gateway' ) );
+			$renewal_order->update_status( 'failed', __( 'Could not calculate sats amount.', 'clink-gateway-for-woocommerce' ) );
 			return;
 		}
 
@@ -100,6 +100,6 @@ class WC_CLINK_Subscriptions {
 		$renewal_order->update_meta_data( '_clink_created', time() );
 		$renewal_order->save();
 
-		$renewal_order->update_status( 'pending', __( 'CLINK renewal invoice ready. Awaiting customer payment.', 'woocommerce-clink-gateway' ) );
+		$renewal_order->update_status( 'pending', __( 'CLINK renewal invoice ready. Awaiting customer payment.', 'clink-gateway-for-woocommerce' ) );
 	}
 }

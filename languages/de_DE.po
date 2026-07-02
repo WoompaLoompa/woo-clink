@@ -1,0 +1,245 @@
+# German translations for CLINK Gateway for WooCommerce package.
+# Copyright (C) 2026 WoompaLoompa
+# This file is distributed under the same license as the CLINK Gateway for WooCommerce package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: CLINK Gateway for WooCommerce 1.0.4\n"
+"Report-Msgid-Bugs-To: https://github.com/WoompaLoompa/woo-clink/issues\n"
+"POT-Creation-Date: 2026-07-02 22:20+0200\n"
+"PO-Revision-Date: 2026-07-02 22:20+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: woocommerce-clink-gateway.php:32
+msgid "Settings"
+msgstr ""
+
+#: woocommerce-clink-gateway.php:46
+msgid ""
+"<strong>WooCommerce CLINK Gateway</strong> requires WooCommerce to be "
+"installed and activated."
+msgstr ""
+
+#. translators: 1: order number, 2: site name
+#: woocommerce-clink-gateway.php:153
+#, php-format
+msgid "Order %1$s - %2$s"
+msgstr ""
+
+#: woocommerce-clink-gateway.php:174
+msgid "Generating Lightning Invoice..."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:175
+msgid "Scan with your Lightning Wallet to pay"
+msgstr ""
+
+#: woocommerce-clink-gateway.php:176
+msgid "Copy Invoice"
+msgstr ""
+
+#: woocommerce-clink-gateway.php:177
+msgid "Copied!"
+msgstr ""
+
+#: woocommerce-clink-gateway.php:178
+msgid "Waiting for payment confirmation..."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:179
+msgid "Payment confirmed! Redirecting..."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:180
+msgid "Error generating invoice. Please try again."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:181
+msgid "Invoice expired. Please try again."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:182
+msgid "Open in Wallet"
+msgstr ""
+
+#. translators: %s: truncated invoice string
+#: woocommerce-clink-gateway.php:240
+#, php-format
+msgid "CLINK invoice generated: %s..."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:248
+msgid "Invoice generated, awaiting payment."
+msgstr ""
+
+#: woocommerce-clink-gateway.php:296
+msgid "Payment confirmed. Thank you for your order!"
+msgstr ""
+
+#: woocommerce-clink-gateway.php:304
+msgid "Missing payment configuration. Please contact the store owner."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:44
+#: includes/class-wc-gateway-clink.php:54
+#: includes/class-wc-gateway-clink.php:99
+#: includes/class-wc-clink-blocks-support.php:79
+msgid "Bitcoin Lightning (via CLINK)"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:45
+msgid ""
+"Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). "
+"Customers pay with <a href=\"https://ShockWallet.app\">ShockWallet.app</a>, "
+"ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted "
+"privately and anonymously via relays of the Nostr protocol."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:55
+msgid "Pay with your Lightning wallet via the CLINK protocol."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:90
+msgid "Enable/Disable"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:92
+msgid "Enable Bitcoin Lightning payments via CLINK"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:96
+msgid "Title"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:98
+msgid "Payment method title shown at checkout."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:103
+msgid "Description"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:105
+msgid "Payment method description shown at checkout."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:106
+msgid ""
+"Pay with your Lightning wallet via the CLINK protocol. Download <a "
+"href=\"https://shockwallet.app\">SHOCKWALLET.app</a> or any other CLINK "
+"compatible bitcoin wallet (ZEUS, Amethyst, etc.)."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:109
+msgid "CLINK Offer String (noffer)"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:111
+msgid ""
+"Your CLINK offer string (starts with noffer1...). Generate this from "
+"ShockWallet, Lightning.Pub, or any CLINK-compatible wallet."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:117
+msgid "Fixed BTC Rate (optional)"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:119
+msgid ""
+"Optionally set a fixed BTC price in your WooCommerce store currency (e.g., "
+"75000.00). Leave empty to use live CoinGecko rate."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:121
+msgid "Live rate"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:124
+msgid "Invoice Timeout (seconds)"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:126
+msgid "How long the customer has to pay the invoice before it expires."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:131
+msgid "Poll Interval (ms)"
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:133
+msgid "How often to check if the payment has been confirmed (in milliseconds)."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:154
+msgid ""
+"The CLINK offer string appears invalid. It should start with \"noffer1\"."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:215
+msgid "Order not found."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:222
+msgid "Payment gateway not configured. Please contact the store owner."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:231
+msgid "Could not calculate Lightning amount. Please try again."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:242
+msgid "Awaiting CLINK payment."
+msgstr ""
+
+#: includes/class-wc-gateway-clink.php:267
+msgid "CLINK protocol receipt"
+msgstr ""
+
+#. translators: %s: receipt identifier
+#: includes/class-wc-gateway-clink.php:271
+#, php-format
+msgid "CLINK payment completed. Receipt: %s"
+msgstr ""
+
+#. translators: 1: formatted amount, 2: reason
+#: includes/class-wc-gateway-clink.php:299
+#, php-format
+msgid ""
+"Refund requested: %1$s (Reason: %2$s). Manual Lightning refund required - "
+"CLINK does not support automatic refunds."
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:38
+msgid "CLINK Offer String"
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:55
+msgid "CLINK Offer String is required for subscription payments."
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:70
+msgid "Subscription not found for renewal."
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:77
+msgid "CLINK offer not configured for subscription."
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:85
+msgid "Payment gateway not available."
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:92
+msgid "Could not calculate sats amount."
+msgstr ""
+
+#: includes/class-wc-clink-subscriptions.php:103
+msgid "CLINK renewal invoice ready. Awaiting customer payment."
+msgstr ""
