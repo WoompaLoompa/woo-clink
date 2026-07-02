@@ -1,14 +1,14 @@
 <?php
 /**
  * Plugin Name: WooCommerce CLINK Gateway
- * Plugin URI: https://github.com/shocknet/woo-clink
- * Description: Accept Lightning Network payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet, ZEUS, Amethyst, or any CLINK-compatible wallet.
- * Version: 1.0.0
+ * Plugin URI: https://github.com/WoompaLoompa/woo-clink
+ * Description: Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet.app, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
+ * Version: 1.0.3
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
- * Author: ShockNet
- * Author URI: https://github.com/shocknet
+ * Author: WoompaLoompa
+ * Author URI: https://woo-clink.wasmer.app
  * License: MIT
  * Text Domain: woocommerce-clink-gateway
  * Domain Path: /languages
@@ -57,6 +57,18 @@ function wc_clink_init() {
 	add_action( 'wp_ajax_wc_clink_mark_paid', 'wc_clink_ajax_mark_paid' );
 	add_action( 'wp_ajax_nopriv_wc_clink_mark_paid', 'wc_clink_ajax_mark_paid' );
 	add_action( 'woocommerce_thankyou_clink', 'wc_clink_thankyou_page', 10, 1 );
+
+	add_filter(
+		'woocommerce_gateway_description',
+		function ( $description, $gateway_id ) {
+			if ( 'clink' === $gateway_id ) {
+				$description = WC_Gateway_CLINK::external_linkify( wp_kses_post( $description ) );
+			}
+			return $description;
+		},
+		10,
+		2
+	);
 
 	if ( class_exists( 'WC_Subscriptions_Order' ) ) {
 		require_once WC_CLINK_PLUGIN_DIR . 'includes/class-wc-clink-subscriptions.php';

@@ -42,7 +42,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$this->icon               = apply_filters( 'woocommerce_clink_icon', WC_CLINK_PLUGIN_URL . 'assets/images/lightning-icon.svg' );
 		$this->has_fields         = false;
 		$this->method_title       = __( 'CLINK (Lightning)', 'woocommerce-clink-gateway' );
-		$this->method_description = __( 'Accept Lightning Network payments via the CLINK protocol. Customers pay with ShockWallet, ZEUS, Amethyst, or any CLINK-compatible Lightning wallet.', 'woocommerce-clink-gateway' );
+		$this->method_description = __( 'Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with <a href="https://ShockWallet.app">ShockWallet.app</a>, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.' );
 		$this->supports           = array(
 			'products',
 			'refunds',
@@ -103,7 +103,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 				'title'       => __( 'Description', 'woocommerce-clink-gateway' ),
 				'type'        => 'textarea',
 				'description' => __( 'Payment method description shown at checkout.', 'woocommerce-clink-gateway' ),
-				'default'     => __( 'Pay with your Lightning wallet via the CLINK protocol.', 'woocommerce-clink-gateway' ),
+				'default'     => __( 'Pay with your Lightning wallet via the CLINK protocol. Download <a href="https://shockwallet.app">SHOCKWALLET.app</a> or any other CLINK compatible bitcoin wallet (ZEUS, Amethyst, etc.).', 'woocommerce-clink-gateway' ),
 			),
 			'noffer'          => array(
 				'title'       => __( 'CLINK Offer String (noffer)', 'woocommerce-clink-gateway' ),
@@ -113,18 +113,10 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 				'placeholder' => 'noffer1...',
 				'desc_tip'    => false,
 			),
-			'currency'        => array(
-				'title'       => __( 'Store Currency', 'woocommerce-clink-gateway' ),
-				'type'        => 'select',
-				'description' => __( 'Your store currency. The gateway uses CoinGecko to convert to satoshis automatically.', 'woocommerce-clink-gateway' ),
-				'default'     => get_woocommerce_currency(),
-				'options'     => $this->get_supported_currencies(),
-				'desc_tip'    => true,
-			),
 			'fixed_fiat_rate'  => array(
 				'title'       => __( 'Fixed BTC Rate (optional)', 'woocommerce-clink-gateway' ),
 				'type'        => 'text',
-				'description' => __( 'Optionally set a fixed BTC price in your currency (e.g., 75000.00). Leave empty to use live CoinGecko rate.', 'woocommerce-clink-gateway' ),
+				'description' => __( 'Optionally set a fixed BTC price in your WooCommerce store currency (e.g., 75000.00). Leave empty to use live CoinGecko rate.', 'woocommerce-clink-gateway' ),
 				'default'     => '',
 				'placeholder' => __( 'Live rate', 'woocommerce-clink-gateway' ),
 			),
@@ -142,31 +134,6 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 				'default'           => 5000,
 				'custom_attributes' => array( 'min' => 2000, 'max' => 30000 ),
 			),
-		);
-	}
-
-	/**
-	 * Get supported currencies for BTC conversion.
-	 *
-	 * @return array
-	 */
-	private function get_supported_currencies(): array {
-		return array(
-			'USD' => __( 'US Dollar (USD)', 'woocommerce-clink-gateway' ),
-			'EUR' => __( 'Euro (EUR)', 'woocommerce-clink-gateway' ),
-			'GBP' => __( 'British Pound (GBP)', 'woocommerce-clink-gateway' ),
-			'CAD' => __( 'Canadian Dollar (CAD)', 'woocommerce-clink-gateway' ),
-			'AUD' => __( 'Australian Dollar (AUD)', 'woocommerce-clink-gateway' ),
-			'JPY' => __( 'Japanese Yen (JPY)', 'woocommerce-clink-gateway' ),
-			'CHF' => __( 'Swiss Franc (CHF)', 'woocommerce-clink-gateway' ),
-			'BRL' => __( 'Brazilian Real (BRL)', 'woocommerce-clink-gateway' ),
-			'CZK' => __( 'Czech Koruna (CZK)', 'woocommerce-clink-gateway' ),
-			'DKK' => __( 'Danish Krone (DKK)', 'woocommerce-clink-gateway' ),
-			'NOK' => __( 'Norwegian Krone (NOK)', 'woocommerce-clink-gateway' ),
-			'SEK' => __( 'Swedish Krona (SEK)', 'woocommerce-clink-gateway' ),
-			'PLN' => __( 'Polish Zloty (PLN)', 'woocommerce-clink-gateway' ),
-			'INR' => __( 'Indian Rupee (INR)', 'woocommerce-clink-gateway' ),
-			'MXN' => __( 'Mexican Peso (MXN)', 'woocommerce-clink-gateway' ),
 		);
 	}
 
@@ -200,6 +167,39 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 	 */
 	private function validate_noffer( string $noffer ): bool {
 		return 0 === strpos( $noffer, 'noffer1' ) && strlen( $noffer ) > 60;
+	}
+
+	/**
+	 * Add target="_blank" and rel="noopener noreferrer" to external links in HTML.
+	 *
+	 * @param  string $html The HTML content.
+	 * @return string
+	 */
+	public static function external_linkify( string $html ): string {
+		return preg_replace_callback(
+			'/<a\s([^>]*?)href=(["\'])((?:https?:)?\/\/[^\s"\']+)\2([^>]*)>/i',
+			function ( $m ) {
+				$attrs = trim( $m[1] . ' ' . $m[4] );
+				if ( false === strpos( $attrs, 'target=' ) ) {
+					$attrs .= ' target="_blank"';
+				}
+				if ( false === strpos( $attrs, 'rel=' ) ) {
+					$attrs .= ' rel="noopener noreferrer"';
+				}
+				return '<a ' . $attrs . ' href=' . $m[2] . $m[3] . $m[2] . '>';
+			},
+			$html
+		);
+	}
+
+	/**
+	 * Get the gateway icon with loading="lazy" for performance.
+	 *
+	 * @return string
+	 */
+	public function get_icon(): string {
+		$icon = $this->icon ? '<img src="' . esc_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" loading="lazy" />' : '';
+		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
 	}
 
 	/**

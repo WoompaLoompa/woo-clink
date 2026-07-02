@@ -15,7 +15,7 @@ const Label = () =>
   );
 
 const PaymentContent = () =>
-  el( 'p', { style: { margin: '4px 0' } }, settings.description || '' );
+  el( 'div', { style: { margin: '4px 0' }, dangerouslySetInnerHTML: { __html: settings.description || '' } } );
 
 registerPaymentMethod( {
   name: PAYMENT_METHOD_NAME,

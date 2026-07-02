@@ -1,6 +1,8 @@
 # WooCommerce CLINK Gateway
 
-Accept **Lightning Network** payments on your WooCommerce store via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with **ShockWallet**, **ZEUS**, **Amethyst**, or any CLINK-compatible Lightning wallet.
+Accept **[Bitcoin](https://bitcoin.org)** **Lightning** payments on your WooCommerce store via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with **[ShockWallet.app](https://ShockWallet.app)**, **ZEUS**, **Amethyst**, or any other CLINK-compatible Lightning wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
+
+> **Demo**: [woo-clink.wasmer.app](https://woo-clink.wasmer.app)
 
 ## How It Works
 
@@ -23,7 +25,7 @@ No web server required for the Lightning node. All communication flows over Nost
 
 ### From WordPress Admin
 
-1. Download the latest release `.zip` from the [releases page](https://github.com/shocknet/woo-clink/releases)
+1. Download the latest release `.zip` from the [releases page](https://github.com/WoompaLoompa/woo-clink/releases)
 2. Go to **Plugins > Add New > Upload Plugin**
 3. Upload the `.zip` and activate
 4. Go to **WooCommerce > Settings > Payments > CLINK (Lightning)** to configure
@@ -35,7 +37,7 @@ No web server required for the Lightning node. All communication flows over Nost
 cd wp-content/plugins/
 
 # Clone the repository
-git clone https://github.com/shocknet/woo-clink.git woocommerce-clink-gateway
+git clone https://github.com/WoompaLoompa/woo-clink.git woocommerce-clink-gateway
 
 # Install JS dependencies and build (optional — pre-built bundle included)
 cd woocommerce-clink-gateway
@@ -54,7 +56,6 @@ Navigate to **WooCommerce > Settings > Payments > CLINK (Lightning)**.
 | **Title** | Payment method title shown at checkout |
 | **Description** | Payment method description shown at checkout |
 | **CLINK Offer String** | Your `noffer1...` string from ShockWallet / Lightning.Pub |
-| **Store Currency** | Your store's base currency (for BTC price conversion) |
 | **Fixed BTC Rate** | Optional — set a fixed BTC price in your currency instead of live CoinGecko rate |
 | **Invoice Timeout** | Seconds before the Lightning invoice expires (default: 600) |
 | **Poll Interval** | Milliseconds between payment status checks (default: 5000) |
