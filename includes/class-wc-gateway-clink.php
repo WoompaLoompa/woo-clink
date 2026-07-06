@@ -33,6 +33,13 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 	private const SATS_PER_BTC = 100_000_000;
 
 	/**
+	 * Currency display format options.
+	 */
+	const CURRENCY_FORMAT_SATS    = 'sats';
+	const CURRENCY_FORMAT_BTC     = 'btc';
+	const CURRENCY_FORMAT_BIP0177 = 'bip0177';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -82,6 +89,24 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the BTC price in the given currency.
+	 *
+	 * @param  string $currency The currency code (e.g. USD).
+	 * @return float
+	 */
+	public static function get_btc_price( string $currency ): float {
+		$gateway = self::get_instance();
+		if ( ! $gateway ) {
+			return 0;
+		}
+		$fixed_rate = $gateway->get_option( 'fixed_fiat_rate' );
+		if ( ! empty( $fixed_rate ) && is_numeric( $fixed_rate ) && (float) $fixed_rate > 0 ) {
+			return (float) $fixed_rate;
+		}
+		return (float) $gateway->fetch_btc_price( $currency );
+	}
+
+	/**
 	 * Initialize gateway settings form fields.
 	 */
 	public function init_form_fields() {
@@ -112,6 +137,17 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 				'default'     => '',
 				'placeholder' => 'noffer1...',
 				'desc_tip'    => false,
+			),
+			'currency_display' => array(
+				'title'       => __( 'Display Amount As', 'clink-gateway-for-woocommerce' ),
+				'type'        => 'select',
+				'description' => __( 'How to display prices on product pages, cart, and checkout. All frontend prices will be shown in this denomination.', 'clink-gateway-for-woocommerce' ),
+				'default'     => 'sats',
+				'options'     => array(
+					self::CURRENCY_FORMAT_SATS    => __( 'Satoshis (e.g. 10,000 sats)', 'clink-gateway-for-woocommerce' ),
+					self::CURRENCY_FORMAT_BTC     => __( 'BTC (e.g. 0.0001 BTC)', 'clink-gateway-for-woocommerce' ),
+					self::CURRENCY_FORMAT_BIP0177 => __( '₿ (bip-0177, e.g. ₿ 0.0001)', 'clink-gateway-for-woocommerce' ),
+				),
 			),
 			'fixed_fiat_rate'  => array(
 				'title'       => __( 'Fixed BTC Rate (optional)', 'clink-gateway-for-woocommerce' ),
@@ -199,7 +235,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 	 */
 	public function get_icon(): string {
 		$icon = $this->icon ? '<img src="' . esc_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" loading="lazy" />' : '';
-		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
+		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 	}
 
 	/**

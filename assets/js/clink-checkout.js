@@ -1,10 +1,9 @@
 import {
   ClinkSDK,
   generateSecretKey,
-  decodeBech32
+  decodeBech32,
 } from '@shocknet/clink-sdk';
-
-const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=';
+import qrcode from 'qrcode-generator';
 
 function el(tag, attrs = {}, children = []) {
   const elem = document.createElement(tag);
@@ -22,9 +21,16 @@ function el(tag, attrs = {}, children = []) {
   return elem;
 }
 
-function getQueryParam(name) {
-  const params = new URLSearchParams(window.location.search);
-  return params.get(name);
+function formatAmount(sats, format) {
+  switch (format) {
+    case 'btc':
+      return (sats / 100000000).toFixed(8) + ' BTC';
+    case 'bip0177':
+      return '\u20BF ' + (sats / 100000000).toFixed(8);
+    case 'sats':
+    default:
+      return Number(sats).toLocaleString() + ' sats';
+  }
 }
 
 class ClinkPaymentUI {
@@ -38,6 +44,9 @@ class ClinkPaymentUI {
     this.startTime = Date.now();
     this.timeout = parseInt(data.timeout, 10) * 1000 || 600000;
     this.ephemeralKey = null;
+    this.hasSubscription = data.hasSubscription || false;
+    this.isRenewal = data.isRenewal || false;
+    this.currencyFormat = data.currencyFormat || 'sats';
     this.render();
   }
 
@@ -46,7 +55,7 @@ class ClinkPaymentUI {
     this.container.appendChild(
       el('div', { className: 'wc-clink-container' }, [
         el('div', { className: 'wc-clink-header' }, [
-          el('div', { className: 'wc-clink-bolt-icon' }, ['⚡']),
+          el('div', { className: 'wc-clink-bolt-icon' }, ['\u26A1']),
           el('h3', { textContent: wcClinkData.i18n.generatingInvoice }),
         ]),
         el('div', { className: 'wc-clink-loader' }, [
@@ -139,26 +148,29 @@ class ClinkPaymentUI {
 
   showInvoice() {
     const bolt11 = this.invoice;
-    const encodedBolt11 = encodeURIComponent(bolt11.toUpperCase());
-    const qrUrl = `${QR_API}${encodedBolt11}`;
+    const qr = qrcode(0, 'M');
+    qr.addData(bolt11.toUpperCase());
+    qr.make();
+    const qrDataUrl = qr.createDataURL(10, 4);
     const walletUrl = `lightning:${bolt11.toUpperCase()}`;
+    const formattedAmount = formatAmount(this.data.amountSats, this.currencyFormat);
 
     this.container.innerHTML = '';
     this.container.appendChild(
       el('div', { className: 'wc-clink-container' }, [
         el('div', { className: 'wc-clink-header' }, [
-          el('div', { className: 'wc-clink-bolt-icon' }, ['⚡']),
-          el('h3', { textContent: wcClinkData.i18n.scanToPay }),
+          el('div', { className: 'wc-clink-bolt-icon' }, ['\u26A1']),
+          el('h3', { textContent: this.isRenewal ? wcClinkData.i18n.renewalProcessing : wcClinkData.i18n.scanToPay }),
         ]),
         el('div', { className: 'wc-clink-qr' }, [
           el('img', {
-            src: qrUrl,
+            src: qrDataUrl,
             alt: 'Lightning Invoice QR Code',
             className: 'wc-clink-qr-img',
           }),
         ]),
         el('div', { className: 'wc-clink-amount' }, [
-          el('span', { textContent: `${this.data.amountSats} sats` }),
+          el('span', { textContent: formattedAmount }),
         ]),
         el('div', { className: 'wc-clink-actions' }, [
           el('a', {
@@ -175,9 +187,12 @@ class ClinkPaymentUI {
         el('div', { className: 'wc-clink-status' }, [
           el('div', { className: 'wc-clink-status-waiting' }, [
             el('img', { src: wcClinkData.loader, alt: '', className: 'wc-clink-inline-loader' }),
-            el('span', { textContent: wcClinkData.i18n.waitingPayment }),
+            el('span', { textContent: this.isRenewal ? wcClinkData.i18n.renewalAutoPay : wcClinkData.i18n.waitingPayment }),
           ]),
         ]),
+        this.isRenewal && this.data.ndebit ? el('div', { className: 'wc-clink-renewal-info' }, [
+          el('p', { textContent: wcClinkData.i18n.ndebitActive }),
+        ]) : null,
       ])
     );
 
@@ -234,6 +249,23 @@ class ClinkPaymentUI {
     }, parseInt(wcClinkData.pollInterval, 10) || 5000);
   }
 
+  async markPaid() {
+    try {
+      const resp = await fetch(wcClinkData.ajaxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'wc_clink_mark_paid',
+          nonce: wcClinkData.nonce,
+          order_id: this.data.orderId,
+        }),
+      });
+      return await resp.json();
+    } catch {
+      return { success: false };
+    }
+  }
+
   onPaymentConfirmed() {
     if (this.paid) return;
     this.paid = true;
@@ -243,43 +275,105 @@ class ClinkPaymentUI {
       this.pollTimer = null;
     }
 
-    this.container.innerHTML = '';
-    this.container.appendChild(
-      el('div', { className: 'wc-clink-container' }, [
-        el('div', { className: 'wc-clink-header' }, [
-          el('div', { className: 'wc-clink-check-icon' }, ['✓']),
-          el('h3', { textContent: wcClinkData.i18n.paymentConfirmed }),
-        ]),
-      ])
-    );
-
-    fetch(wcClinkData.ajaxUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        action: 'wc_clink_mark_paid',
-        nonce: wcClinkData.nonce,
-        order_id: this.data.orderId,
-      }),
-    })
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success && json.data.redirect) {
+    if (this.hasSubscription && !this.isRenewal) {
+      this.markPaid().then(() => this.showNdebitSetup());
+    } else {
+      this.markPaid().then((json) => {
+        if (json.success && json.data && json.data.redirect) {
           window.location.href = json.data.redirect;
         } else {
           window.location.reload();
         }
-      })
-      .catch(() => {
-        window.location.reload();
       });
+    }
+  }
+
+  showNdebitSetup() {
+    this.container.innerHTML = '';
+    this.container.appendChild(
+      el('div', { className: 'wc-clink-container' }, [
+        el('div', { className: 'wc-clink-header' }, [
+          el('div', { className: 'wc-clink-check-icon' }, ['\u2713']),
+          el('h3', { textContent: wcClinkData.i18n.paymentConfirmed }),
+        ]),
+        el('div', { className: 'wc-clink-ndebit-section' }, [
+          el('h4', { textContent: wcClinkData.i18n.ndebitTitle }),
+          el('p', { className: 'wc-clink-ndebit-desc', innerHTML: wcClinkData.i18n.ndebitDescription }),
+          el('input', {
+            type: 'text',
+            className: 'wc-clink-ndebit-input',
+            placeholder: wcClinkData.i18n.ndebitPlaceholder,
+            id: 'wc-clink-ndebit-input',
+          }),
+          el('div', { className: 'wc-clink-ndebit-actions' }, [
+            el('button', {
+              className: 'wc-clink-btn wc-clink-btn-primary',
+              textContent: wcClinkData.i18n.ndebitSave,
+              onClick: () => this.saveNdebit(),
+            }),
+            el('button', {
+              className: 'wc-clink-btn wc-clink-btn-link',
+              textContent: wcClinkData.i18n.ndebitSkip,
+              onClick: () => this.redirectAfterPayment(),
+            }),
+          ]),
+          el('div', { className: 'wc-clink-ndebit-saved', id: 'wc-clink-ndebit-saved', style: 'display:none' }, [
+            el('span', { className: 'wc-clink-ndebit-saved-icon' }, ['\u2713']),
+            el('span', { textContent: wcClinkData.i18n.ndebitSaved }),
+          ]),
+        ]),
+      ])
+    );
+  }
+
+  async saveNdebit() {
+    const ndebit = document.getElementById('wc-clink-ndebit-input').value.trim();
+    if (!ndebit || !ndebit.startsWith('ndebit1')) {
+      alert('Please enter a valid ndebit string starting with "ndebit1".');
+      return;
+    }
+    try {
+      const resp = await fetch(wcClinkData.ajaxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'wc_clink_save_ndebit',
+          nonce: wcClinkData.nonce,
+          order_id: this.data.orderId,
+          ndebit: ndebit,
+        }),
+      });
+      const json = await resp.json();
+      if (json.success) {
+        document.getElementById('wc-clink-ndebit-saved').style.display = 'block';
+        const input = document.querySelector('.wc-clink-ndebit-input');
+        const actions = document.querySelector('.wc-clink-ndebit-actions');
+        if (input) input.style.display = 'none';
+        if (actions) actions.style.display = 'none';
+        setTimeout(() => this.redirectAfterPayment(), 2000);
+      } else {
+        alert(json.data && json.data.message ? json.data.message : 'Failed to save auto-renewal settings.');
+      }
+    } catch (err) {
+      console.error('Ndebit save error:', err);
+      alert('Error saving auto-renewal settings. Please try again.');
+    }
+  }
+
+  redirectAfterPayment() {
+    const url = wcClinkData.redirectUrl;
+    if (url) {
+      window.location.href = url;
+    } else {
+      window.location.reload();
+    }
   }
 
   showError(message) {
     this.container.innerHTML = '';
     this.container.appendChild(
       el('div', { className: 'wc-clink-container wc-clink-error-container' }, [
-        el('div', { className: 'wc-clink-error-icon' }, ['✕']),
+        el('div', { className: 'wc-clink-error-icon' }, ['\u2715']),
         el('p', { className: 'wc-clink-error-msg', textContent: message }),
         el('button', {
           className: 'wc-clink-btn wc-clink-btn-primary',
@@ -294,7 +388,7 @@ class ClinkPaymentUI {
     this.container.innerHTML = '';
     this.container.appendChild(
       el('div', { className: 'wc-clink-container wc-clink-error-container' }, [
-        el('div', { className: 'wc-clink-error-icon' }, ['⏰']),
+        el('div', { className: 'wc-clink-error-icon' }, ['\u23F0']),
         el('p', { className: 'wc-clink-error-msg', textContent: wcClinkData.i18n.expired }),
         el('button', {
           className: 'wc-clink-btn wc-clink-btn-primary',

@@ -1,6 +1,6 @@
 # CLINK Gateway for WooCommerce
 
-Accept **[Bitcoin](https://bitcoin.org)** **Lightning** payments on your WooCommerce store via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with **[ShockWallet.app](https://ShockWallet.app)**, **[ZEUS](https://github.com/ZeusLN/zeus/pull/4102)**, **[Amethyst](https://github.com/vitorpamplona/amethyst/pull/3182)**, or any other CLINK-compatible Lightning wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
+Accept **[Bitcoin](https://bitcoin.org)** **Lightning** payments on your WooCommerce store via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with **[ShockWallet.app](https://ShockWallet.app)**, **ZEUS**, **Amethyst**, or any other CLINK-compatible Lightning wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
 
 > **Demo**: [woo-clink.wasmer.app](https://woo-clink.wasmer.app) | **Plugin**: [github.com/WoompaLoompa/woo-clink](https://github.com/WoompaLoompa/woo-clink)
 
@@ -57,6 +57,7 @@ Navigate to **WooCommerce > Settings > Payments > CLINK (Lightning)**.
 | **Description** | Payment method description shown at checkout |
 | **CLINK Offer String** | Your `noffer1...` string from ShockWallet / Lightning.Pub |
 | **Fixed BTC Rate** | Optional — set a fixed BTC price in your currency instead of live CoinGecko rate |
+| **Display Amount As** | Choose how prices appear on product pages, cart, and checkout: sats, BTC, or ₿ (bip-0177). Overrides WooCommerce frontend prices. |
 | **Invoice Timeout** | Seconds before the Lightning invoice expires (default: 600) |
 | **Poll Interval** | Milliseconds between payment status checks (default: 5000) |
 
@@ -68,8 +69,24 @@ Navigate to **WooCommerce > Settings > Payments > CLINK (Lightning)**.
 | Variable | Yes |
 | Digital / Virtual | Yes |
 | Subscription (initial) | Yes |
-| Subscription (auto-renewal) | Manual — customer returns to pay |
+| Subscription (auto-renewal) | Yes — via CLINK ndebit authorization |
 | Bookings / Appointments | Yes (via WooCommerce core) |
+
+## Auto-Renewal (Subscriptions)
+
+After the first subscription payment, customers are prompted to **Setup Auto-Renewal** on the order-received page:
+
+1. Open their CLINK wallet (ShockWallet, ZEUS, Amethyst)
+2. Visit **Get your nDebit string** link pointing to [my.shockwallet.app/lapps](https://my.shockwallet.app/lapps)
+3. Copy the `ndebit1...` string and paste it into the auto-renewal field
+4. Future payments are processed automatically — no QR scanning required
+
+The **My Account > View Subscription** page reflects the ndebit status in the "Payment" row:
+
+- **No ndebit saved**: Shows "Activate Auto-Renewal" as a link back to the parent order's order-received page for setup
+- **Ndebit saved**: Shows "Auto-Renewal" (plain text)
+
+Customers can **disable** auto-renewal from **My Account > Subscriptions** at any time. Subscriptions without ndebit show a "Get nDebit String" action link to enable auto-renewal later.
 
 ## Generating a `noffer`
 
@@ -99,10 +116,11 @@ npm run build
 npm run watch
 ```
 
-Two JavaScript bundles are built with esbuild:
+Three JavaScript bundles are built with esbuild:
 
-- **`assets/js/clink-checkout.js`** — uses `@shocknet/clink-sdk` to request Lightning invoices via the CLINK protocol on the order-received page. Built to `clink-checkout.min.js`.
+- **`assets/js/clink-checkout.js`** — uses `@shocknet/clink-sdk` to request Lightning invoices via the CLINK protocol on the order-received page. QR codes are generated client-side with `qrcode-generator` (no remote API). Built to `clink-checkout.min.js`.
 - **`assets/js/clink-blocks.js`** — registers the gateway with WooCommerce Cart/Checkout Blocks via `registerPaymentMethod()`. Built to `clink-blocks.min.js`.
+- **`assets/js/clink-price-converter.js`** — client-side price conversion fallback that converts `.woocommerce-Price-amount` elements to sats/BTC/₿ on all frontend pages. Ensures compatibility with price-display plugins like Custom Price for WooCommerce Pro. Built to `clink-price-converter.min.js`.
 
 ## Architecture
 
@@ -146,7 +164,9 @@ woocommerce-clink-gateway/
 │   │   ├── clink-checkout.min.js        # Built bundle
 │   │   ├── clink-blocks.js             # Source — blocks checkout registration
 │   │   ├── clink-blocks.min.js         # Built bundle
-│   │   └── clink-checkout.asset.php     # Asset metadata
+│   │   ├── clink-price-converter.js    # Source — client-side price conversion fallback
+│   │   ├── clink-price-converter.min.js# Built bundle
+│   │   └── clink-checkout.asset.php    # Asset metadata
 │   ├── css/clink-checkout.css           # Checkout page styles
 │   └── images/lightning-icon.svg        # Payment method icon
 ├── build.mjs                            # esbuild config
@@ -160,6 +180,32 @@ woocommerce-clink-gateway/
 - **Sanitization**: All input uses `sanitize_text_field()` / `absint()`
 - **No direct DB queries**: All data access through WooCommerce APIs
 - **Ephemeral keys**: Each checkout generates a fresh Nostr key pair — never reuses keys
+
+## Third Party Services
+
+This plugin communicates with the following third-party services:
+
+### Nostr Relays (CLINK Protocol)
+
+- **Purpose**: Request and receive Lightning invoices from the merchant's CLINK-compatible wallet.
+- **When**: At checkout, when a customer places an order using the CLINK payment method.
+- **Data sent**: Merchant's noffer offer data, payment amount in satoshis, order description, and ephemeral public keys.
+- **Relay URL**: Determined by the merchant's noffer string (configured in gateway settings).
+- **Privacy note**: No personal customer data (name, email, address) is transmitted to Nostr relays. Only payment amount and a short order description are shared. Customers choosing wallet-based auto-renewal (ndebit) authorize the merchant to pull future subscription payments; the ndebit string and subscription amount are known to the Nostr relay.
+
+### CoinGecko
+
+- **Purpose**: Fetch the current BTC-to-fiat exchange rate for price display.
+- **When**: On checkout page load, every 5 minutes (result cached in WordPress transients).
+- **Data sent**: The store's currency code (e.g., `usd`, `eur`).
+- **Privacy policy**: https://www.coingecko.com/en/privacy
+- **Note**: If configured, a fixed exchange rate in the plugin settings bypasses this service entirely.
+
+### ShockWallet.app
+
+- **Purpose**: Informational links for customers to generate CLINK noffer/ndebit strings.
+- **When**: When the customer clicks the link (no data sent by the plugin automatically).
+- **Privacy policy**:https://docs.shock.network/privacy
 
 ## License
 
