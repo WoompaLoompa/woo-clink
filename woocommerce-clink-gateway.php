@@ -339,6 +339,7 @@ function wc_clink_checkout_scripts() {
 				'ndebitSkip'       => __( 'Not now', 'clink-gateway-for-woocommerce' ),
 				'ndebitSaved'      => __( 'Auto-renewal is active! Future payments will be processed automatically.', 'clink-gateway-for-woocommerce' ),
 				'ndebitActive'     => __( 'Auto-renewal is active. Your wallet should pay this invoice automatically.', 'clink-gateway-for-woocommerce' ),
+				'tryAgain'         => __( 'Try Again', 'clink-gateway-for-woocommerce' ),
 			),
 		)
 	);
@@ -883,12 +884,18 @@ function wc_clink_ajax_save_ndebit() {
 	$saved = 0;
 	foreach ( $subscription_ids as $sub_id ) {
 		$subscription = wc_get_order( $sub_id );
-		if ( $subscription ) {
-			$subscription->update_meta_data( '_clink_ndebit', $ndebit );
-			$subscription->add_order_note( __( 'Auto-renewal authorized via CLINK ndebit.', 'clink-gateway-for-woocommerce' ) );
-			$subscription->save();
-			$saved++;
+		if ( ! $subscription ) {
+			continue;
 		}
+
+		if ( is_user_logged_in() && $subscription->get_customer_id() !== get_current_user_id() ) {
+			continue;
+		}
+
+		$subscription->update_meta_data( '_clink_ndebit', $ndebit );
+		$subscription->add_order_note( __( 'Auto-renewal authorized via CLINK ndebit.', 'clink-gateway-for-woocommerce' ) );
+		$subscription->save();
+		$saved++;
 	}
 
 	if ( $saved > 0 ) {

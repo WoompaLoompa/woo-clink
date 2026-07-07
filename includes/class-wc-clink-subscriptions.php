@@ -220,7 +220,7 @@ class WC_CLINK_Subscriptions {
 			);
 		} else {
 			$actions['clink-activate-auto-renewal'] = array(
-				'url'  => 'https://my.shockwallet.app/lapps',
+				'url'  => esc_url( 'https://my.shockwallet.app/lapps' ),
 				'name' => __( 'Activate Auto-Renewal', 'clink-gateway-for-woocommerce' ),
 			);
 		}

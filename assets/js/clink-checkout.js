@@ -377,7 +377,7 @@ class ClinkPaymentUI {
         el('p', { className: 'wc-clink-error-msg', textContent: message }),
         el('button', {
           className: 'wc-clink-btn wc-clink-btn-primary',
-          textContent: 'Try Again',
+          textContent: wcClinkData.i18n.tryAgain,
           onClick: () => this.render(),
         }),
       ])
@@ -392,7 +392,7 @@ class ClinkPaymentUI {
         el('p', { className: 'wc-clink-error-msg', textContent: wcClinkData.i18n.expired }),
         el('button', {
           className: 'wc-clink-btn wc-clink-btn-primary',
-          textContent: 'Try Again',
+          textContent: wcClinkData.i18n.tryAgain,
           onClick: () => {
             this.startTime = Date.now();
             this.render();
