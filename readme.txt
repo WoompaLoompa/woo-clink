@@ -1,4 +1,4 @@
-=== CLINK Gateway for WooCommerce ===
+=== Bitcoin Lightning Payment Gateway for WooCommerce (via CLINK) ===
 Contributors: WooClink
 Donate link: https://woo-clink.wasmer.app/product/donate/
 Tags: lightning, bitcoin, clink, nostr, woocommerce

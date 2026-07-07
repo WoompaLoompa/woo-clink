@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: CLINK Gateway for WooCommerce
+ * Plugin Name: Bitcoin Lightning Payment Gateway for WooCommerce (via CLINK)
  * Plugin URI: https://github.com/WoompaLoompa/woo-clink
  * Description: Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet.app, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
  * Version: 1.0.7
