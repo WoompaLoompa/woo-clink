@@ -184,10 +184,3 @@ Source code for the built JavaScript bundles is included in the plugin:
 * `assets/js/clink-price-converter.js` — source for the client-side price conversion fallback
 * `build.mjs` — esbuild configuration
 * `package.json` — npm dependencies
-
-To rebuild the minified bundles:
-
-```
-npm install
-npm run build
-```
