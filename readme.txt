@@ -101,9 +101,12 @@ This plugin communicates with the following third-party services:
 
 == Screenshots ==
 
-1. Payment method at checkout
-2. QR code on order-received page
-3. Gateway settings page
+1. Bitcoin Lightning Payment method at checkout via CLINK protocol
+2. QR code on order-received page. Customer pay the first instalment immediately
+3. After fist invoice is paid, Customer can activate Auto-Renewal pasting nDebit string from any CLINK-enabled bitcoin lightning wallet
+4. Customer paste nDebit string and interface display Coinfirmation of Auto-Renewal activation for future payments
+5. When Auto-Renewal is activated, the customer has the option to pay next instalment invoice anytime
+6. Bitcoin Lightning payment Gateway (via CLINK) in WooCommerce > Settings page
 
 == Changelog ==
 
