@@ -212,4 +212,4 @@ This plugin communicates with the following third-party services:
 
 ## License
 
-GPLv2 or later
+GPL3 or later
