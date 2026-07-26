@@ -136,7 +136,7 @@ class ClinkPaymentUI {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           action: 'wc_clink_confirm_payment',
-          nonce: wcClinkData.nonce,
+          nonce: wcClinkData.confirmNonce,
           order_id: this.data.orderId,
           invoice: this.invoice,
         }),
@@ -235,7 +235,7 @@ class ClinkPaymentUI {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
             action: 'wc_clink_check_payment',
-            nonce: wcClinkData.nonce,
+          nonce: wcClinkData.checkNonce,
             order_id: this.data.orderId,
           }),
         });
@@ -256,7 +256,7 @@ class ClinkPaymentUI {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           action: 'wc_clink_mark_paid',
-          nonce: wcClinkData.nonce,
+          nonce: wcClinkData.markPaidNonce,
           order_id: this.data.orderId,
         }),
       });
@@ -338,7 +338,7 @@ class ClinkPaymentUI {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           action: 'wc_clink_save_ndebit',
-          nonce: wcClinkData.nonce,
+          nonce: wcClinkData.saveNonce,
           order_id: this.data.orderId,
           ndebit: ndebit,
         }),

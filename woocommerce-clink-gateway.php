@@ -3,7 +3,7 @@
  * Plugin Name: Bitcoin Lightning Payment Gateway for WooCommerce (via CLINK)
  * Plugin URI: https://github.com/WoompaLoompa/woo-clink
  * Description: Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet.app, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
- * Version: 1.0.7
+ * Version: 1.0.8
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WC_CLINK_VERSION', '1.0.7' );
+define( 'WC_CLINK_VERSION', '1.0.8' );
 define( 'WC_CLINK_PLUGIN_FILE', __FILE__ );
 define( 'WC_CLINK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WC_CLINK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -301,12 +301,20 @@ function wc_clink_checkout_scripts() {
 
 	$currency_format = $gateway->get_option( 'currency_display', 'sats' );
 
+	$confirm_nonce  = $order_id ? wp_create_nonce( 'clink_confirm_payment_' . $order_id ) : '';
+	$check_nonce     = $order_id ? wp_create_nonce( 'clink_check_payment_' . $order_id ) : '';
+	$mark_paid_nonce = $order_id ? wp_create_nonce( 'clink_mark_paid_' . $order_id ) : '';
+	$save_nonce      = $order_id ? wp_create_nonce( 'clink_save_ndebit_' . $order_id ) : '';
+
 	wp_localize_script(
 		'wc-clink-checkout',
 		'wcClinkData',
 		array(
 			'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-			'nonce'           => wp_create_nonce( 'wc_clink_nonce' ),
+			'confirmNonce'    => $confirm_nonce,
+			'checkNonce'      => $check_nonce,
+			'markPaidNonce'   => $mark_paid_nonce,
+			'saveNonce'       => $save_nonce,
 			'orderId'         => intval( $order_id ),
 			'amountSats'      => intval( $order_amount_sats ),
 			'description'     => esc_js( $description ),
@@ -726,13 +734,13 @@ function wc_clink_cart_total( $total_html ) {
  * AJAX: Check if payment has been completed.
  */
 function wc_clink_ajax_check_payment() {
-	check_ajax_referer( 'wc_clink_nonce', 'nonce' );
-
 	$order_id = absint( $_POST['order_id'] ?? 0 );
 
 	if ( ! $order_id ) {
 		wp_send_json_error( array( 'message' => 'Invalid order ID' ) );
 	}
+
+	check_ajax_referer( 'clink_check_payment_' . $order_id, 'nonce' );
 
 	$order = wc_get_order( $order_id );
 
@@ -755,8 +763,6 @@ function wc_clink_ajax_check_payment() {
  * AJAX: Confirm that an invoice was generated.
  */
 function wc_clink_ajax_confirm_payment() {
-	check_ajax_referer( 'wc_clink_nonce', 'nonce' );
-
 	$order_id = absint( $_POST['order_id'] ?? 0 );
 	$invoice  = sanitize_text_field( wp_unslash( $_POST['invoice'] ?? '' ) );
 
@@ -764,10 +770,16 @@ function wc_clink_ajax_confirm_payment() {
 		wp_send_json_error( array( 'message' => 'Missing parameters' ) );
 	}
 
+	check_ajax_referer( 'clink_confirm_payment_' . $order_id, 'nonce' );
+
 	$order = wc_get_order( $order_id );
 
 	if ( ! $order || 'clink' !== $order->get_payment_method() ) {
 		wp_send_json_error( array( 'message' => 'Invalid order' ) );
+	}
+
+	if ( is_user_logged_in() && $order->get_customer_id() !== get_current_user_id() ) {
+		wp_send_json_error( array( 'message' => 'You do not have permission to update this order' ) );
 	}
 
 	$order->update_meta_data( '_clink_invoice', $invoice );
@@ -792,13 +804,13 @@ function wc_clink_ajax_confirm_payment() {
  * AJAX: Mark order as paid (called after CLINK receipt).
  */
 function wc_clink_ajax_mark_paid() {
-	check_ajax_referer( 'wc_clink_nonce', 'nonce' );
-
 	$order_id = absint( $_POST['order_id'] ?? 0 );
 
 	if ( ! $order_id ) {
 		wp_send_json_error( array( 'message' => 'Invalid order ID' ) );
 	}
+
+	check_ajax_referer( 'clink_mark_paid_' . $order_id, 'nonce' );
 
 	$order = wc_get_order( $order_id );
 
@@ -806,10 +818,23 @@ function wc_clink_ajax_mark_paid() {
 		wp_send_json_error( array( 'message' => 'Invalid order' ) );
 	}
 
+	if ( ! in_array( $order->get_status(), array( 'pending', 'on-hold' ), true ) ) {
+		wp_send_json_error( array( 'message' => 'Order is not awaiting payment' ) );
+	}
+
+	if ( is_user_logged_in() && $order->get_customer_id() !== get_current_user_id() ) {
+		wp_send_json_error( array( 'message' => 'You do not have permission to complete this order' ) );
+	}
+
+	$invoice = $order->get_meta( '_clink_invoice' );
+	if ( empty( $invoice ) ) {
+		wp_send_json_error( array( 'message' => 'No invoice generated for this order' ) );
+	}
+
 	$gateway = WC_Gateway_CLINK::get_instance();
 
 	if ( $gateway ) {
-		$gateway->payment_complete( $order, 'clink_receipt' );
+		$gateway->payment_complete( $order, $invoice );
 	}
 
 	wp_send_json_success( array( 'redirect' => $order->get_checkout_order_received_url() ) );
@@ -849,8 +874,6 @@ function wc_clink_thankyou_page( $order_id ) {
  * AJAX: Save an ndebit authorization string on the subscription.
  */
 function wc_clink_ajax_save_ndebit() {
-	check_ajax_referer( 'wc_clink_nonce', 'nonce' );
-
 	$ndebit          = sanitize_text_field( wp_unslash( $_POST['ndebit'] ?? '' ) );
 	$subscription_id = absint( $_POST['subscription_id'] ?? 0 );
 	$order_id        = absint( $_POST['order_id'] ?? 0 );
@@ -863,17 +886,19 @@ function wc_clink_ajax_save_ndebit() {
 		wp_send_json_error( array( 'message' => __( 'Invalid ndebit format.', 'clink-gateway-for-woocommerce' ) ) );
 	}
 
+	if ( $order_id ) {
+		check_ajax_referer( 'clink_save_ndebit_' . $order_id, 'nonce' );
+	} elseif ( $subscription_id ) {
+		check_ajax_referer( 'clink_save_ndebit_' . $subscription_id, 'nonce' );
+	} else {
+		wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'clink-gateway-for-woocommerce' ) ) );
+	}
+
 	$subscription_ids = array();
 
 	if ( $subscription_id > 0 ) {
 		$subscription_ids = array( $subscription_id );
 	} elseif ( $order_id > 0 ) {
-		$order = wc_get_order( $order_id );
-
-		if ( ! $order ) {
-			wp_send_json_error( array( 'message' => __( 'Order not found.', 'clink-gateway-for-woocommerce' ) ) );
-		}
-
 		$subscription_ids = wc_clink_get_subscription_ids_for_order( $order_id );
 	}
 

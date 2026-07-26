@@ -5,7 +5,7 @@ Tags: lightning, bitcoin, clink, nostr, woocommerce
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,13 @@ This plugin communicates with the following third-party services:
 
 == Changelog ==
 
+= 1.0.8 =
+* **Security fix**: Replaced generic nonces with per-order nonces for all AJAX handlers to prevent unauthenticated order payment bypass
+* Added order status verification to mark_paid handler (must be pending or on-hold)
+* Added invoice existence check to mark_paid handler (invoice must be generated first)
+* Added ownership checks to confirm_payment and save_ndebit handlers for logged-in users
+* All AJAX actions (confirm, check, mark_paid, save_ndebit) now use order-bound nonces
+
 = 1.0.7 =
 * Stripped remote gist.github.com URL from built JavaScript bundle (WordPress.org review compliance)
 * Fixed contributors list to match plugin owner's WordPress.org username
@@ -162,6 +169,9 @@ This plugin communicates with the following third-party services:
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.0.8 =
+**Security update**: fixes an unauthenticated order payment bypass vulnerability. All sites should update immediately.
 
 = 1.0.7 =
 Compliance fixes for WordPress.org review and subscription My Account improvements: "Payment" row now shows "Auto-Renewal" or links "Activate Auto-Renewal" to the order-received page for ndebit setup.
