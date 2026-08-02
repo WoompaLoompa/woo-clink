@@ -1,0 +1,16 @@
+{
+  "name": "woocommerce-clink-gateway",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "@shocknet/clink-sdk": "^1.5.5",
+    "qrcode-generator": "^2.0.4"
+  }
+}

@@ -279,17 +279,49 @@ class ClinkPaymentUI {
       this.pollTimer = null;
     }
 
-    if (this.hasSubscription && !this.isRenewal) {
-      this.markPaid().then(() => this.showNdebitSetup());
-    } else {
-      this.markPaid().then((json) => {
-        if (json.success && json.data && json.data.redirect) {
-          window.location.href = json.data.redirect;
-        } else {
-          window.location.reload();
-        }
-      });
+    this.showPaidScreen();
+
+    this.finalizePayment().then((json) => {
+      if (this.hasSubscription && !this.isRenewal) {
+        this.showNdebitSetup();
+        return;
+      }
+      if (json && json.success && json.data && json.data.redirect) {
+        window.location.href = json.data.redirect;
+      } else {
+        this.showPaidScreen(true);
+      }
+    });
+  }
+
+  async finalizePayment(attempts = 0) {
+    const json = await this.markPaid();
+
+    if (json && json.success) {
+      return json;
     }
+
+    if (attempts < 5) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return this.finalizePayment(attempts + 1);
+    }
+
+    return json;
+  }
+
+  showPaidScreen(final = false) {
+    this.container.innerHTML = '';
+    this.container.appendChild(
+      el('div', { className: 'wc-clink-container' }, [
+        el('div', { className: 'wc-clink-header' }, [
+          el('div', { className: 'wc-clink-check-icon' }, ['\u2713']),
+          el('h3', { textContent: wcClinkData.i18n.paymentConfirmed }),
+        ]),
+        final
+          ? el('p', { className: 'wc-clink-paid-note', textContent: wcClinkData.i18n.paidNote })
+          : null,
+      ])
+    );
   }
 
   showNdebitSetup() {

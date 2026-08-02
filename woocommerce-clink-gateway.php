@@ -3,7 +3,7 @@
  * Plugin Name: Bitcoin Lightning Payment Gateway for WooCommerce (via CLINK)
  * Plugin URI: https://github.com/WoompaLoompa/woo-clink
  * Description: Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet.app, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
- * Version: 1.0.9
+ * Version: 1.1.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WC_CLINK_VERSION', '1.0.9' );
+define( 'WC_CLINK_VERSION', '1.1.0' );
 define( 'WC_CLINK_PLUGIN_FILE', __FILE__ );
 define( 'WC_CLINK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WC_CLINK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -337,6 +337,7 @@ function wc_clink_checkout_scripts() {
 				'invoiceCopied'    => __( 'Copied!', 'clink-gateway-for-woocommerce' ),
 				'waitingPayment'   => __( 'Waiting for payment confirmation...', 'clink-gateway-for-woocommerce' ),
 				'paymentConfirmed'  => __( 'Payment confirmed!', 'clink-gateway-for-woocommerce' ),
+				'paidNote'          => __( 'Payment received. You can safely close this page.', 'clink-gateway-for-woocommerce' ),
 				'paymentError'     => __( 'Error generating invoice. Please try again.', 'clink-gateway-for-woocommerce' ),
 				'expired'          => __( 'Invoice expired. Please try again.', 'clink-gateway-for-woocommerce' ),
 				'openInWallet'     => __( 'Open in Wallet', 'clink-gateway-for-woocommerce' ),
@@ -1080,7 +1081,12 @@ function wc_clink_ajax_mark_paid() {
 
 	$invoice = $order->get_meta( '_clink_invoice' );
 	if ( empty( $invoice ) ) {
-		wp_send_json_error( array( 'message' => 'No invoice generated for this order' ) );
+		wp_send_json_error(
+			array(
+				'message'   => 'No invoice generated for this order',
+				'retryable' => true,
+			)
+		);
 	}
 
 	$gateway = WC_Gateway_CLINK::get_instance();
