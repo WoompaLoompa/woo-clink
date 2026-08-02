@@ -3,7 +3,7 @@ Contributors: WooClink
 Donate link: https://woo-clink.wasmer.app/product/donate/
 Tags: lightning, bitcoin, clink, nostr, woocommerce
 Requires at least: 5.8
-Tested up to: 7.0.2
+Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 1.0.9
 License: GPLv2 or later
@@ -176,6 +176,9 @@ This plugin communicates with the following third-party services:
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.0.9 =
+**Security update**: BOLT11 invoice validation (checksum, network, amount, expiry) and order-key ownership enforcement on all AJAX handlers. All sites should update immediately.
 
 = 1.0.8 =
 **Security update**: fixes an unauthenticated order payment bypass vulnerability. All sites should update immediately.
