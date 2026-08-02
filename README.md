@@ -1,6 +1,6 @@
 # Bitcoin Lightning Payment Gateway for WooCommerce (via CLINK)
 
-Accept **[Bitcoin](https://bitcoin.org)** **Lightning** payments on your WooCommerce store via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with **[ShockWallet.app](https://ShockWallet.app)**, **ZEUS**, **Amethyst**, or any other CLINK-compatible Lightning wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
+Accept **[Bitcoin](https://bitcoin.org)** **Lightning** payments on your WooCommerce store via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with **[ShockWallet.app](https://ShockWallet.app)**, **ZEUS**, **BXRD.app**, **Amethyst**, or any other CLINK-compatible Lightning wallet. All transmitted privately and anonymously via relays of the Nostr protocol. Read the original [public announcement](https://stacker.news/items/1520883/r/06bc1a977d) to learn more.
 
 > **Demo**: [woo-clink.wasmer.app](https://woo-clink.wasmer.app) 
 > **Plugin**: [github.com/WoompaLoompa/woo-clink](https://github.com/WoompaLoompa/woo-clink)
