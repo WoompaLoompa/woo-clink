@@ -5,7 +5,7 @@ Tags: lightning, bitcoin, clink, nostr, woocommerce
 Requires at least: 5.8
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,7 +15,7 @@ Accept Bitcoin Lightning Network payments via the CLINK protocol. Customers pay 
 
 Accept **Bitcoin Lightning Network** payments on your WooCommerce store via the **CLINK protocol**. No web server required for your Lightning node — all communication flows over Nostr relays.
 
-Customers can pay with **ShockWallet**, **ZEUS**, **Amethyst**, or any CLINK-compatible Lightning wallet.
+Customers can pay with **ShockWallet**, **ZEUS**, **BXRD.app**, **Amethyst**, or any CLINK-compatible Lightning wallet. Read the original [public announcement](https://stacker.news/items/1520883/r/06bc1a977d) to learn more.
 
 = How It Works =
 
@@ -109,6 +109,13 @@ This plugin communicates with the following third-party services:
 6. Bitcoin Lightning payment Gateway (via CLINK) in WooCommerce > Settings page
 
 == Changelog ==
+
+= 1.0.9 =
+* **Security fix**: Added strict BOLT11 invoice validation — checksum, network, amount, and expiry are now verified against the order before payment is confirmed
+* **Security fix**: Order-key ownership is now enforced on all AJAX handlers, closing a guest-order payment bypass (guests must present the matching order key)
+* **Security fix**: save_ndebit no longer accepts a client-supplied subscription ID; subscriptions are resolved server-side from the verified order
+* Added `Network` setting (mainnet / testnet / regtest) to the gateway configuration
+* Invoice amounts must match the order total (within 1 sat) and invoices expiring in under 60 seconds are rejected
 
 = 1.0.8 =
 * **Security fix**: Replaced generic nonces with per-order nonces for all AJAX handlers to prevent unauthenticated order payment bypass

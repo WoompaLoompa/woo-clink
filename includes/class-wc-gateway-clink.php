@@ -138,6 +138,17 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 				'placeholder' => 'noffer1...',
 				'desc_tip'    => false,
 			),
+			'network'         => array(
+				'title'       => __( 'Bitcoin Network', 'clink-gateway-for-woocommerce' ),
+				'type'        => 'select',
+				'description' => __( 'The Bitcoin network your CLINK offer operates on. Invoices from a different network are rejected.', 'clink-gateway-for-woocommerce' ),
+				'default'     => 'mainnet',
+				'options'     => array(
+					'mainnet' => __( 'Mainnet (lnbc…)', 'clink-gateway-for-woocommerce' ),
+					'testnet' => __( 'Testnet (lntb…)', 'clink-gateway-for-woocommerce' ),
+					'regtest' => __( 'Regtest (lnbcrt…)', 'clink-gateway-for-woocommerce' ),
+				),
+			),
 			'currency_display' => array(
 				'title'       => __( 'Display Amount As', 'clink-gateway-for-woocommerce' ),
 				'type'        => 'select',

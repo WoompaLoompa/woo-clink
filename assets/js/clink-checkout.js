@@ -130,19 +130,21 @@ class ClinkPaymentUI {
   }
 
   async confirmInvoice() {
-    try {
-      await fetch(wcClinkData.ajaxUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          action: 'wc_clink_confirm_payment',
-          nonce: wcClinkData.confirmNonce,
-          order_id: this.data.orderId,
-          invoice: this.invoice,
-        }),
-      });
-    } catch (err) {
-      console.error('Failed to confirm invoice with backend:', err);
+    const resp = await fetch(wcClinkData.ajaxUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'wc_clink_confirm_payment',
+        nonce: wcClinkData.confirmNonce,
+        order_id: this.data.orderId,
+        order_key: wcClinkData.orderKey,
+        invoice: this.invoice,
+      }),
+    });
+    const json = await resp.json();
+    if (!json || !json.success) {
+      const msg = json && json.data && json.data.message ? json.data.message : 'Invoice rejected';
+      throw new Error(msg);
     }
   }
 
@@ -235,8 +237,9 @@ class ClinkPaymentUI {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
             action: 'wc_clink_check_payment',
-          nonce: wcClinkData.checkNonce,
+            nonce: wcClinkData.checkNonce,
             order_id: this.data.orderId,
+            order_key: wcClinkData.orderKey,
           }),
         });
         const json = await resp.json();
@@ -258,6 +261,7 @@ class ClinkPaymentUI {
           action: 'wc_clink_mark_paid',
           nonce: wcClinkData.markPaidNonce,
           order_id: this.data.orderId,
+          order_key: wcClinkData.orderKey,
         }),
       });
       return await resp.json();
@@ -340,6 +344,7 @@ class ClinkPaymentUI {
           action: 'wc_clink_save_ndebit',
           nonce: wcClinkData.saveNonce,
           order_id: this.data.orderId,
+          order_key: wcClinkData.orderKey,
           ndebit: ndebit,
         }),
       });

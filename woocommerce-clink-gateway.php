@@ -3,7 +3,7 @@
  * Plugin Name: Bitcoin Lightning Payment Gateway for WooCommerce (via CLINK)
  * Plugin URI: https://github.com/WoompaLoompa/woo-clink
  * Description: Accept Bitcoin Lightning payments via the CLINK protocol (clinkme.dev). Customers pay with ShockWallet.app, ZEUS, Amethyst, or any other CLINK-compatible wallet. All transmitted privately and anonymously via relays of the Nostr protocol.
- * Version: 1.0.8
+ * Version: 1.0.9
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WC_CLINK_VERSION', '1.0.8' );
+define( 'WC_CLINK_VERSION', '1.0.9' );
 define( 'WC_CLINK_PLUGIN_FILE', __FILE__ );
 define( 'WC_CLINK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WC_CLINK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -263,11 +263,13 @@ function wc_clink_checkout_scripts() {
 	$is_renewal       = false;
 	$ndebit           = '';
 	$redirect_url     = '';
+	$order_key        = '';
 
 	if ( $order_id ) {
 		$order = wc_get_order( $order_id );
 
 		if ( $order && 'clink' === $order->get_payment_method() ) {
+			$order_key         = (string) $order->get_order_key();
 			$order_amount_sats = (int) $order->get_meta( '_clink_amount_sats' );
 			$noffer           = $order->get_meta( '_clink_noffer' );
 			$description      = sprintf(
@@ -316,6 +318,7 @@ function wc_clink_checkout_scripts() {
 			'markPaidNonce'   => $mark_paid_nonce,
 			'saveNonce'       => $save_nonce,
 			'orderId'         => intval( $order_id ),
+			'orderKey'        => esc_js( $order_key ),
 			'amountSats'      => intval( $order_amount_sats ),
 			'description'     => esc_js( $description ),
 			'noffer'          => esc_js( $noffer ),
@@ -731,10 +734,231 @@ function wc_clink_cart_total( $total_html ) {
 }
 
 /**
+ * Verify that the current user (or guest with the order key) owns the order.
+ *
+ * Logged-in customers must match the order's customer ID. Guest customers must
+ * present the order key that was issued in the checkout order-received URL.
+ *
+ * @param WC_Order $order     The order object.
+ * @param string   $order_key The posted order key (may be empty).
+ * @return bool
+ */
+function wc_clink_verify_order_access( $order, $order_key ) {
+	if ( ! $order ) {
+		return false;
+	}
+
+	if ( is_user_logged_in() ) {
+		return $order->get_customer_id() === get_current_user_id();
+	}
+
+	if ( empty( $order_key ) ) {
+		return false;
+	}
+
+	return hash_equals( (string) $order->get_order_key(), (string) $order_key );
+}
+
+/**
+ * Decode a bech32 string into its HRP and 8-bit bytes.
+ *
+ * Validates the checksum using the original bech32 checksum constant (BOLT11).
+ *
+ * @param  string $str The bech32 string.
+ * @return array|null  Array with 'hrp' and 'words' keys, or null on failure.
+ */
+function wc_clink_bech32_decode( $str ) {
+	$charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+	$str     = strtolower( trim( $str ) );
+	$pos     = strrpos( $str, '1' );
+
+	if ( false === $pos ) {
+		return null;
+	}
+
+	$hrp  = substr( $str, 0, $pos );
+	$data = substr( $str, $pos + 1 );
+
+	if ( '' === $hrp || strlen( $data ) < 6 ) {
+		return null;
+	}
+
+	$values = array();
+	for ( $i = 0; $i < strlen( $data ); $i++ ) {
+		$idx = strpos( $charset, $data[ $i ] );
+		if ( false === $idx ) {
+			return null;
+		}
+		$values[] = $idx;
+	}
+
+	if ( 1 !== wc_clink_bech32_polymod( array_merge( wc_clink_bech32_hrp_expand( $hrp ), $values ) ) ) {
+		return null;
+	}
+
+	return array(
+		'hrp'   => $hrp,
+		'words' => array_slice( $values, 0, -6 ),
+	);
+}
+
+/**
+ * Bech32 polymod checksum.
+ *
+ * @param  int[] $values Expanded values.
+ * @return int
+ */
+function wc_clink_bech32_polymod( $values ) {
+	$gen = array( 0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3 );
+	$chk = 1;
+
+	foreach ( $values as $v ) {
+		$b   = $chk >> 25;
+		$chk = ( ( $chk & 0x1ffffff ) << 5 ) ^ $v;
+
+		foreach ( $gen as $i => $g ) {
+			if ( ( $b >> $i ) & 1 ) {
+				$chk ^= $g;
+			}
+		}
+	}
+
+	return $chk;
+}
+
+/**
+ * Bech32 HRP expansion.
+ *
+ * @param  string $hrp The human-readable part.
+ * @return int[]
+ */
+function wc_clink_bech32_hrp_expand( $hrp ) {
+	$ret = array();
+
+	for ( $i = 0; $i < strlen( $hrp ); $i++ ) {
+		$ret[] = ord( $hrp[ $i ] ) >> 5;
+	}
+
+	$ret[] = 0;
+
+	for ( $i = 0; $i < strlen( $hrp ); $i++ ) {
+		$ret[] = ord( $hrp[ $i ] ) & 31;
+	}
+
+	return $ret;
+}
+
+/**
+ * Convert a big-endian array of 5-bit words to an integer.
+ *
+ * @param  int[] $words The 5-bit words.
+ * @return int
+ */
+function wc_clink_words_to_int( $words ) {
+	$value = 0;
+
+	foreach ( $words as $word ) {
+		$value = ( $value * 32 ) + $word;
+	}
+
+	return $value;
+}
+
+/**
+ * Parse a BOLT11 invoice into its network, amount, and expiry.
+ *
+ * The amount and network are read from the human-readable part. The expiry
+ * is read from the `x` tagged field (type 6). Invalid invoices return null.
+ *
+ * @param  string $bolt11 The BOLT11 invoice string.
+ * @return array|null Array with 'network', 'amount_sats', and 'expiry' keys.
+ */
+function wc_clink_parse_bolt11( $bolt11 ) {
+	$decoded = wc_clink_bech32_decode( $bolt11 );
+
+	if ( ! $decoded ) {
+		return null;
+	}
+
+	$hrp = $decoded['hrp'];
+
+	if ( 0 === strpos( $hrp, 'lnbcrt' ) ) {
+		$network = 'regtest';
+		$rest    = substr( $hrp, 6 );
+	} elseif ( 0 === strpos( $hrp, 'lnbc' ) ) {
+		$network = 'mainnet';
+		$rest    = substr( $hrp, 4 );
+	} elseif ( 0 === strpos( $hrp, 'lntb' ) ) {
+		$network = 'testnet';
+		$rest    = substr( $hrp, 4 );
+	} else {
+		return null;
+	}
+
+	$amount_sats = 0;
+
+	if ( '' !== $rest ) {
+		if ( ! preg_match( '/^([0-9]+)([munp]?)$/', $rest, $m ) ) {
+			return null;
+		}
+
+		$multipliers = array(
+			'm' => 100000, // milliBTC  = 100000 sats.
+			'u' => 100,    // microBTC  = 100 sats.
+			'n' => 0.1,    // nanoBTC   = 0.1 sats.
+			'p' => 0.0001, // picoBTC   = 0.0001 sats.
+		);
+
+		$amount_sats = (float) $m[1];
+
+		if ( ! empty( $m[2] ) ) {
+			$amount_sats *= $multipliers[ $m[2] ];
+		}
+
+		$amount_sats = (int) round( $amount_sats );
+	}
+
+	$expiry = null;
+
+	if ( count( $decoded['words'] ) > 7 + 104 ) {
+		$words = array_slice( $decoded['words'], 7, -104 );
+
+		while ( ! empty( $words ) ) {
+			$type  = array_shift( $words );
+
+			if ( count( $words ) < 2 ) {
+				break;
+			}
+
+			$length = wc_clink_words_to_int( array_slice( $words, 0, 2 ) );
+			$words  = array_slice( $words, 2 );
+
+			if ( count( $words ) < $length ) {
+				break;
+			}
+
+			if ( 6 === $type ) {
+				$expiry = wc_clink_words_to_int( array_slice( $words, 0, $length ) );
+				break;
+			}
+
+			$words = array_slice( $words, $length );
+		}
+	}
+
+	return array(
+		'network'    => $network,
+		'amount_sats' => $amount_sats,
+		'expiry'     => $expiry,
+	);
+}
+
+/**
  * AJAX: Check if payment has been completed.
  */
 function wc_clink_ajax_check_payment() {
-	$order_id = absint( $_POST['order_id'] ?? 0 );
+	$order_id  = absint( $_POST['order_id'] ?? 0 );
+	$order_key = sanitize_text_field( wp_unslash( $_POST['order_key'] ?? '' ) );
 
 	if ( ! $order_id ) {
 		wp_send_json_error( array( 'message' => 'Invalid order ID' ) );
@@ -746,6 +970,10 @@ function wc_clink_ajax_check_payment() {
 
 	if ( ! $order || 'clink' !== $order->get_payment_method() ) {
 		wp_send_json_error( array( 'message' => 'Invalid order' ) );
+	}
+
+	if ( ! wc_clink_verify_order_access( $order, $order_key ) ) {
+		wp_send_json_error( array( 'message' => 'You do not have permission to view this order' ) );
 	}
 
 	$status = $order->get_status();
@@ -763,8 +991,9 @@ function wc_clink_ajax_check_payment() {
  * AJAX: Confirm that an invoice was generated.
  */
 function wc_clink_ajax_confirm_payment() {
-	$order_id = absint( $_POST['order_id'] ?? 0 );
-	$invoice  = sanitize_text_field( wp_unslash( $_POST['invoice'] ?? '' ) );
+	$order_id  = absint( $_POST['order_id'] ?? 0 );
+	$invoice   = sanitize_text_field( wp_unslash( $_POST['invoice'] ?? '' ) );
+	$order_key = sanitize_text_field( wp_unslash( $_POST['order_key'] ?? '' ) );
 
 	if ( ! $order_id || ! $invoice ) {
 		wp_send_json_error( array( 'message' => 'Missing parameters' ) );
@@ -778,11 +1007,35 @@ function wc_clink_ajax_confirm_payment() {
 		wp_send_json_error( array( 'message' => 'Invalid order' ) );
 	}
 
-	if ( is_user_logged_in() && $order->get_customer_id() !== get_current_user_id() ) {
+	if ( ! wc_clink_verify_order_access( $order, $order_key ) ) {
 		wp_send_json_error( array( 'message' => 'You do not have permission to update this order' ) );
 	}
 
+	$parsed = wc_clink_parse_bolt11( $invoice );
+
+	if ( ! $parsed ) {
+		wp_send_json_error( array( 'message' => __( 'Invalid BOLT11 invoice.', 'clink-gateway-for-woocommerce' ) ) );
+	}
+
+	$gateway = WC_Gateway_CLINK::get_instance();
+	$network = $gateway ? $gateway->get_option( 'network', 'mainnet' ) : 'mainnet';
+
+	if ( $parsed['network'] !== $network ) {
+		wp_send_json_error( array( 'message' => __( 'The invoice is not for the configured Bitcoin network.', 'clink-gateway-for-woocommerce' ) ) );
+	}
+
+	$expected_sats = (int) $order->get_meta( '_clink_amount_sats' );
+
+	if ( abs( $parsed['amount_sats'] - $expected_sats ) > 1 ) {
+		wp_send_json_error( array( 'message' => __( 'The invoice amount does not match the order total.', 'clink-gateway-for-woocommerce' ) ) );
+	}
+
+	if ( null !== $parsed['expiry'] && $parsed['expiry'] < 60 ) {
+		wp_send_json_error( array( 'message' => __( 'The invoice expiry is too short.', 'clink-gateway-for-woocommerce' ) ) );
+	}
+
 	$order->update_meta_data( '_clink_invoice', $invoice );
+	$order->update_meta_data( '_clink_invoice_amount_sats', $parsed['amount_sats'] );
 	$order->add_order_note(
 		sprintf(
 		/* translators: %s: truncated invoice string */
@@ -790,8 +1043,6 @@ function wc_clink_ajax_confirm_payment() {
 			substr( $invoice, 0, 30 )
 		)
 	);
-
-	$gateway = WC_Gateway_CLINK::get_instance();
 
 	if ( $gateway ) {
 		$order->update_status( 'on-hold', __( 'Invoice generated, awaiting payment.', 'clink-gateway-for-woocommerce' ) );
@@ -804,7 +1055,8 @@ function wc_clink_ajax_confirm_payment() {
  * AJAX: Mark order as paid (called after CLINK receipt).
  */
 function wc_clink_ajax_mark_paid() {
-	$order_id = absint( $_POST['order_id'] ?? 0 );
+	$order_id  = absint( $_POST['order_id'] ?? 0 );
+	$order_key = sanitize_text_field( wp_unslash( $_POST['order_key'] ?? '' ) );
 
 	if ( ! $order_id ) {
 		wp_send_json_error( array( 'message' => 'Invalid order ID' ) );
@@ -822,7 +1074,7 @@ function wc_clink_ajax_mark_paid() {
 		wp_send_json_error( array( 'message' => 'Order is not awaiting payment' ) );
 	}
 
-	if ( is_user_logged_in() && $order->get_customer_id() !== get_current_user_id() ) {
+	if ( ! wc_clink_verify_order_access( $order, $order_key ) ) {
 		wp_send_json_error( array( 'message' => 'You do not have permission to complete this order' ) );
 	}
 
@@ -875,10 +1127,10 @@ function wc_clink_thankyou_page( $order_id ) {
  */
 function wc_clink_ajax_save_ndebit() {
 	$ndebit          = sanitize_text_field( wp_unslash( $_POST['ndebit'] ?? '' ) );
-	$subscription_id = absint( $_POST['subscription_id'] ?? 0 );
 	$order_id        = absint( $_POST['order_id'] ?? 0 );
+	$order_key       = sanitize_text_field( wp_unslash( $_POST['order_key'] ?? '' ) );
 
-	if ( ! $ndebit ) {
+	if ( ! $ndebit || ! $order_id ) {
 		wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'clink-gateway-for-woocommerce' ) ) );
 	}
 
@@ -886,21 +1138,19 @@ function wc_clink_ajax_save_ndebit() {
 		wp_send_json_error( array( 'message' => __( 'Invalid ndebit format.', 'clink-gateway-for-woocommerce' ) ) );
 	}
 
-	if ( $order_id ) {
-		check_ajax_referer( 'clink_save_ndebit_' . $order_id, 'nonce' );
-	} elseif ( $subscription_id ) {
-		check_ajax_referer( 'clink_save_ndebit_' . $subscription_id, 'nonce' );
-	} else {
-		wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'clink-gateway-for-woocommerce' ) ) );
+	check_ajax_referer( 'clink_save_ndebit_' . $order_id, 'nonce' );
+
+	$order = wc_get_order( $order_id );
+
+	if ( ! $order ) {
+		wp_send_json_error( array( 'message' => __( 'Order not found.', 'clink-gateway-for-woocommerce' ) ) );
 	}
 
-	$subscription_ids = array();
-
-	if ( $subscription_id > 0 ) {
-		$subscription_ids = array( $subscription_id );
-	} elseif ( $order_id > 0 ) {
-		$subscription_ids = wc_clink_get_subscription_ids_for_order( $order_id );
+	if ( ! wc_clink_verify_order_access( $order, $order_key ) ) {
+		wp_send_json_error( array( 'message' => __( 'You do not have permission to update this order.', 'clink-gateway-for-woocommerce' ) ) );
 	}
+
+	$subscription_ids = wc_clink_get_subscription_ids_for_order( $order_id );
 
 	if ( empty( $subscription_ids ) ) {
 		wp_send_json_error( array( 'message' => __( 'No subscription found.', 'clink-gateway-for-woocommerce' ) ) );
@@ -910,10 +1160,6 @@ function wc_clink_ajax_save_ndebit() {
 	foreach ( $subscription_ids as $sub_id ) {
 		$subscription = wc_get_order( $sub_id );
 		if ( ! $subscription ) {
-			continue;
-		}
-
-		if ( is_user_logged_in() && $subscription->get_customer_id() !== get_current_user_id() ) {
 			continue;
 		}
 
