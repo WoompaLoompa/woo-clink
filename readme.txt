@@ -5,7 +5,7 @@ Tags: lightning, bitcoin, clink, nostr, woocommerce
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,9 @@ This plugin communicates with the following third-party services:
 
 == Changelog ==
 
+= 1.1.1 =
+* Orders are now placed directly into **on-hold** status at checkout instead of **pending**, preventing WooCommerce's automatic "unpaid order" cancellation from removing orders that were already paid via CLINK
+
 = 1.1.0 =
 * Fixed post-payment flow: after the CLINK receipt arrives, the order-received page now shows an immediate "Payment confirmed" screen and reliably redirects to the order summary
 * mark_paid now retries transiently when the invoice record isn't ready yet (receipt arriving before invoice confirmation completes), preventing the payment page from getting stuck on a fresh QR code
@@ -181,6 +184,9 @@ This plugin communicates with the following third-party services:
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Orders are now set to **on-hold** at checkout instead of **pending**, so WooCommerce's automatic cancellation of unpaid orders can no longer cancel orders that were already paid. Also set **Hold stock (minutes)** to 0 or above your invoice timeout in WooCommerce settings.
 
 = 1.1.0 =
 Fixes the post-payment confirmation and redirect flow: customers now see a "Payment confirmed" screen and are redirected to their order summary reliably after paying.

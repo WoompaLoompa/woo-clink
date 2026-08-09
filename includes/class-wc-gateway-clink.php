@@ -286,7 +286,7 @@ class WC_Gateway_CLINK extends WC_Payment_Gateway {
 		$order->update_meta_data( '_clink_created', time() );
 		$order->save();
 
-		$order->update_status( 'pending', __( 'Awaiting CLINK payment.', 'clink-gateway-for-woocommerce' ) );
+		$order->update_status( 'on-hold', __( 'Awaiting CLINK payment.', 'clink-gateway-for-woocommerce' ) );
 
 		WC()->cart->empty_cart();
 
