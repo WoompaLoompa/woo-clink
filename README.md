@@ -59,6 +59,7 @@ Navigate to **WooCommerce > Settings > Payments > CLINK (Lightning)**.
 | **Title** | Payment method title shown at checkout |
 | **Description** | Payment method description shown at checkout |
 | **CLINK Offer String** | Your `noffer1...` string from ShockWallet / Lightning.Pub |
+| **Bitcoin Network** | The network your CLINK offer operates on: Mainnet, Testnet, or Regtest. Invoices from a different network are rejected. |
 | **Fixed BTC Rate** | Optional — set a fixed BTC price in your currency instead of live CoinGecko rate |
 | **Display Amount As** | Choose how prices appear on product pages, cart, and checkout: sats, BTC, or ₿ (bip-0177). Overrides WooCommerce frontend prices. |
 | **Invoice Timeout** | Seconds before the Lightning invoice expires (default: 600) |
@@ -213,3 +214,21 @@ This plugin communicates with the following third-party services:
 ## License
 
 GPLv2 or later
+
+## Changelog
+
+Recent versions. Full history: see the [Changelog wiki page](https://github.com/WoompaLoompa/woo-clink/wiki/Changelog).
+
+### 1.1.1
+
+- Orders are now placed directly into **on-hold** status at checkout instead of **pending**, preventing WooCommerce's automatic "unpaid order" cancellation from removing orders that were already paid via CLINK.
+
+### 1.1.0
+
+- Fixed post-payment flow: after the CLINK receipt arrives, the order-received page now shows an immediate **"Payment confirmed"** screen and reliably redirects to the order summary.
+- `mark_paid` now retries transiently when the invoice record isn't ready yet (receipt arriving before invoice confirmation completes).
+
+### 1.0.9
+
+- **Security fix**: strict BOLT11 invoice validation (checksum, network, amount, expiry) and order-key ownership enforcement on all AJAX handlers.
+- Added **Network** setting (mainnet / testnet / regtest).
